@@ -1,0 +1,57 @@
+# Example of a profiles file for dabcup
+
+### General informations ###
+# Dabcup will automatically load the file ~/.dabcup/.profiles.yml.
+# All fields are CASE SENSITIVE !!!
+
+### Security informations ###
+# This file doesn't contain any password for database authentification. Indeed
+# shell commands are stored into log file which are not protected. That's why
+# dabcup don't provide the password when invoking mysqldump for example.
+# Otherwise it may contains your amazon secret key, FTP password, ... In this
+# case be sure that this file is readable only by you. Execute this command:
+# chmod 600 ~/.dabcup/profiles.yml
+# to be sure that this file is only readable by you.
+# FTP, SCP passwords or amazon secret key will never appear in log files.
+
+### PostgreSQL authentification ###
+# If your not the database admin, the only solution is to store your password in
+# ~/.pgpass file which will be read by the PostgreSQL client. It should look like this:
+# localhost:*:*:my_login:my_password
+# Don't forget to execute chmod 600 ~/.pgpass.
+# More informations are available there:
+# http://www.postgresql.org/docs/8.1/static/libpq-pgpass.html
+
+### MySQL authentification ###
+# You can store you password in ~/.my.cnf. The file should look like this:
+# [client]
+# password=my_password
+# Don't forget to do chmod 600 ~/.my.cnf to protect your password.
+
+
+profile_name: # Unique for each profile, mysite.com or myblog.com for example.
+  database:
+    adapter: PostgreSQL # PostgreSQL, MySQL are supported
+    host: localhost
+    port:   # Leave empty for default prot
+    login: user_name
+    name: database_name
+  storage:
+    adapter: S3 # S3, SFTP et FTP are supported
+    host:       # S3 don't required host address
+    port:       # S3 don't required port. Leave empty for default port.
+    login: amazon_key
+    password: amazon_secret_key
+    path: /home/backups/mysite.com  # Folder to put backups (FTP and SFTp only)
+    bucket: bucket_name             # Only for S3
+    keep:                           # This section is used by the clean operation
+      days_of_week: 1, 2            # Keep backups of days 1 and 2 of each week
+      days_of_month: 10, 20, 30     # Keep backups of days 10, 20 and 30 of each month
+      less_days_than: 50            # Keep all dumps that are younger than 50 days
+  spare_storage:        # If you'r really careful, you want a 2nd backups storage
+    adapter: FTP
+    host: backup.server.com
+    port: 21
+    login: backup
+    password: password123
+    path: /my/site/
