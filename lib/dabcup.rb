@@ -1,22 +1,43 @@
 module Dabcup
-  # Default output streams
-  @@info_stream = $stdout
-  @@err_stream = $stderr
+  #@@logger = Logger.new
+  #@@err_stream.puts Time.now.strftime('[%Y-%m-%d %H:%M] ') + msg
+  #@@info_stream.puts Time.now.strftime('[%Y-%m-%d %H:%M] ') + msg
+  
+  def self.debug(msg)
+    return if not @@logger
+    @@logger.debug(normalize_message(msg))
+  end
   
   def self.info(msg)
-    @@info_stream.puts Time.now.strftime('[%Y-%m-%d %H:%M] ') + msg
+    return if not @@logger
+    @@logger.info(normalize_message(msg))
+  end
+  
+  def self.warn(msg)
+    return if not @@logger
+    @@logger.warn(normalize_message(msg))
   end
   
   def self.error(msg)
-    @@err_stream.puts Time.now.strftime('[%Y-%m-%d %H:%M] ') + msg
+    return if not @@logger
+    @@logger.error(normalize_message(msg))  
   end
   
-  def self.info_stream=(stream)
-    @@info_stream = stream
+  def self.fatal(msg)
+    return if not @@logger
+    @@logger.fatal(normalize_message(msg))
   end
   
-  def self.err_stream=(stream)
-    @@err_stream = stream
+  def self.set_logger(logger)
+    @@logger = logger
+  end
+  
+  def self.get_logger()
+    @@logger
+  end
+  
+  def self.normalize_message(msg)
+    msg.kind_of?(Exception) ? msg.inspect + "\n  " + msg.backtrace.join("\n  ") : msg
   end
 end
 
