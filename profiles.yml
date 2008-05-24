@@ -1,7 +1,9 @@
 # Example of a profiles file for dabcup
 
 ### General informations ###
-# Dabcup will automatically load the file ~/.dabcup/.profiles.yml.
+# Dabcup will automatically load the file ~/.dabcup/profiles.yml. So copy
+# profiles.yml in ~/.dabcup.
+# 
 # All fields are CASE SENSITIVE !!!
 
 ### Security informations ###
@@ -28,6 +30,12 @@
 # password=my_password
 # Don't forget to do chmod 600 ~/.my.cnf to protect your password.
 
+config:
+  log_path: ~/.dabcup/dabcup.log            # Default value
+  log_level: error                          # debug, info, warn, error, fatal (default error)
+  log_age: 9                                # number (default 0)
+  log_size: 5                               # Size of each log file (in MB) (default 5)
+  log_datetime_format: '[%Y-%m-%d %H:%M]'   # See http://www.ruby-doc.org/core/classes/Time.html#M000297
 
 profile_name: # Unique for each profile, mysite.com or myblog.com for example.
   database:
