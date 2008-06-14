@@ -42,7 +42,7 @@ module Dabcup
     end
     
     def main(args)
-      raise "Profile #{args[0]} doesn't exist" if not @profiles.has_key?(args[0])
+      raise "Profile '#{args[0]}' doesn't exist." if not @profiles.has_key?(args[0])
       operation = Operation::Factory.new_operation(args[1], @profiles[args[0]])
       Dabcup::info("Begin #{args[1]} #{args[0]}")
       operation.run(args)

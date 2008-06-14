@@ -1,8 +1,4 @@
 module Dabcup
-  #@@logger = Logger.new
-  #@@err_stream.puts Time.now.strftime('[%Y-%m-%d %H:%M] ') + msg
-  #@@info_stream.puts Time.now.strftime('[%Y-%m-%d %H:%M] ') + msg
-  
   def self.debug(msg)
     return if not @@logger
     @@logger.debug(normalize_message(msg))
@@ -38,6 +34,10 @@ module Dabcup
   
   def self.normalize_message(msg)
     msg.kind_of?(Exception) ? msg.inspect + "\n  " + msg.backtrace.join("\n  ") : msg
+  end
+  
+  def self.time_to_name(time)
+    time.strftime('%Y-%m-%dT%H:%M:%S') + '.dump'
   end
 end
 

@@ -19,6 +19,36 @@ module Dabcup::Storage
     def default_port(port)
       @port = port if @port.nil? or @port.empty?
     end
+    
+    # Connects to remote host.
+    def connect
+      raise NotImplementedError.new('Sorry.')
+    end
+    
+    # Disconnects from remote host.
+    def disconnect
+      raise NotImplementedError.new('Sorry.')
+    end
+    
+    def put
+      raise NotImplementedError.new('Sorry.')
+    end
+    
+    def get
+      raise NotImplementedError.new('Sorry.')
+    end
+    
+    def list
+      raise NotImplementedError.new('Sorry.')
+    end
+    
+    def delete
+      raise NotImplementedError.new('Sorry.')
+    end
+    
+    def exists?
+      raise NotImplementedError.new('Sorry.')
+    end
   end
 
   class Factory
@@ -68,7 +98,11 @@ module Dabcup::Storage
     def list
       connect
       Dabcup::info("S3 list #{@bucket}")
-      AWS::S3::Bucket.find(@bucket).objects.collect do |obj| obj.key end
+      AWS::S3::Bucket.find(@bucket).objects.collect do |obj|
+        # AWS returns a Time object if string i like: YYYY-MM-DDTHH:mm.
+        name = obj.key.is_a?(Time) ? Dabcup::time_to_name(obj.key) : obj.key.to_s
+        Dump.new(:name => name, :size => obj.size)
+      end
     end
     
     def delete(file_names)
@@ -120,14 +154,15 @@ module Dabcup::Storage
     
     def list
       connect
-      result = nil
+      dumps = []
       Dabcup::info("FTP list #{@login}@#{@host}:#{@path}")
-      result = @ftp.list(@path)
-      regex = /\s\d\d:\d\d\s(.*)$/
-      result = result.collect do |str| regex.match(str)[1] end
-      result.delete('.')
-      result.delete('..')
-      result
+      lines = @ftp.list(@path)
+      lines.collect do |str|
+        fields = str.split(' ')
+        next if fields[8] == '.' or fields[8] == '..'
+        dumps << Dabcup::Storage::Dump.new(:name => fields[8], :size => fields[4].to_i)
+      end
+      dumps
     end
     
     def delete(file_names)
@@ -212,7 +247,7 @@ module Dabcup::Storage
     def connect
       return if @sftp
       Dabcup::info("SFTP connect to #{@login}@#{@host}")
-      @sftp = Net::SFTP.start(@host, @login, @password)
+      @sftp = Net::SFTP.start(@host, @login, :password => @password)
       @sftp.connect
     end
     
@@ -220,6 +255,29 @@ module Dabcup::Storage
       return if not @sftp
       Dabcup::info("SFTP disconnect from #{@login}@#{@host}")
       @sftp.close 
+    end
+  end
+  
+  class Dump
+    attr_accessor :name
+    attr_accessor :size
+    
+    def initialize(attrs = {})
+      self.attributes = attrs
+    end
+    
+    def attributes
+      attrs = {}
+      instance_variables.each do |name|
+        attrs[name] = __send__(name)
+      end
+      attrs
+    end
+    
+    def attributes=(attributes)
+      attributes.each do |name, value|
+        __send__(name.to_s + '=', value)
+      end
     end
   end
 end

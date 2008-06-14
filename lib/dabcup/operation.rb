@@ -8,14 +8,15 @@ module Dabcup::Operation
     end
     
     def terminate
-      @storage.disconnect
+      @storage.disconnect if @storage
       @spare_storage.disconnect if @spare_storage
     end
   end
   
   class Store < Base
     def run(args)
-      file_name = Time.new.strftime('%Y.%m.%d') + '.dump'
+      file_name = @config['database']['name'] + '_'
+      file_name += Dabcup::time_to_name(Time.now)
       file_path = File.join(Dir.tmpdir, file_name)
       @db.dump(file_path)
       @storage.put(file_path, file_name)
@@ -28,7 +29,7 @@ module Dabcup::Operation
   # Restore a dump file stored on a remote place
   class Restore < Base
     def run(args)
-      file_name = args[2] + '.dump'
+      file_name = args[2]
       file_path = File.join(Dir.tmpdir, file_name)
       if @storage.exists?(file_name)
         @storage.get(file_name, file_path)
@@ -47,8 +48,17 @@ module Dabcup::Operation
   # List all dumps available
   class List < Base
     def run(args)
-      @storage.list.each do |name|
-        puts name
+      max_length = 0
+      dumps = @storage.list
+      # Get length of longest name
+      dumps.each do |dump|
+        max_length = dump.name.size if dump.name.size  > max_length
+      end
+      # Prints names and sizes
+      dumps.each do |dump|
+        name_str = dump.name.ljust(max_length + 2)
+        size_str = (dump.size / 1024).to_s.rjust(8)
+        puts "#{name_str}#{size_str} Ko"
       end
     end
   end
@@ -117,7 +127,7 @@ module Dabcup::Operation
       when 'delete'
         operation = Dabcup::Operation::Delete.new(config)
       else
-        raise "Unknow operation #{name}"
+        raise "Unknow operation '#{name}'."
       end
       operation
     end
