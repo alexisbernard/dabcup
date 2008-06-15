@@ -1,7 +1,10 @@
 ### Dabcup ###
 
-[ ] List files name and size
+### Version 1.0 ###
+[X] List files name and size
 [ ] Add a help option (dabcup --help <command>)
 [ ] Build dabcup website
 [ ] Write a tutorial
-[ ] Implement new database
+
+### Version 2.0 ###
+[ ] More databases support
