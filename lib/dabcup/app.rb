@@ -42,13 +42,32 @@ module Dabcup
     end
     
     def main(args)
-      raise "Profile '#{args[0]}' doesn't exist." if not @profiles.has_key?(args[0])
+      if args.size < 1
+        $stderr.puts "Try 'dabcup help'."
+      elsif ['help', '-h', '--help', '?'].include?(args[0])
+        help(args)
+      else
+        run(args)
+      end
+    rescue Dabcup::Error => ex
+      $stderr.puts ex.message
+    rescue => ex
+      $stderr.puts ex.message
+      Dabcup::fatal(ex)
+    end
+    
+    def run(args)
+      raise Dabcup::Error.new("Profile '#{args[0]}' doesn't exist.") if not @profiles.has_key?(args[0])
       operation = Operation::Factory.new_operation(args[1], @profiles[args[0]])
       Dabcup::info("Begin #{args[1]} #{args[0]}")
       operation.run(args)
       Dabcup::info("End #{args[1]} #{args[0]}")
     ensure
       operation.terminate if operation
+    end
+    
+    def help(args)
+      puts Dabcup::Help.message(args[1])
     end
   end
 end

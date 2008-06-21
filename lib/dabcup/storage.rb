@@ -46,8 +46,11 @@ module Dabcup::Storage
       raise NotImplementedError.new('Sorry.')
     end
     
-    def exists?
-      raise NotImplementedError.new('Sorry.')
+    def exists?(name)
+      list.each do |dump|
+        return true if dump.name == name
+      end
+      false
     end
   end
 
@@ -80,6 +83,7 @@ module Dabcup::Storage
     def put(local_path, remote_path)
       connect
       Dabcup::info("S3 put #{local_path} to #{@bucket}:#{remote_path}")
+      puts AWS::S3::S3Object.path!(@bucket, remote_path)
       File.open(local_path) do |file|
         AWS::S3::S3Object.store(remote_path, file, @bucket)
       end
@@ -112,11 +116,6 @@ module Dabcup::Storage
         Dabcup::info("S3 delete #{@bucket}:#{file_name}")
         AWS::S3::S3Object.delete(file_name, @bucket)
       end
-    end
-    
-    def exists?(file_name)
-      connect
-      AWS::S3::S3Object.exists?(file_name, @bucket)
     end
     
     def connect
@@ -175,10 +174,6 @@ module Dabcup::Storage
       end
     end
     
-    def exists?(file_name)
-      list.include?(file_name)
-    end
-    
     def connect
       return if @ftp
       Dabcup::info("FTP connect to #{@login}@#{@host}")
@@ -219,15 +214,19 @@ module Dabcup::Storage
     
     def list
       connect
-      result = nil
+      dumps = []
       Dabcup::info("SFTP list #{@login}@#{@host}:#{@path}")
-      handle = @sftp.opendir(@path)
-      items = @sftp.readdir(handle)
-      result = items.collect do |item| item.filename end
-      @sftp.close_handle(handle)
-      result.delete('.')
-      result.delete('..')
-      result
+      handle = @sftp.opendir!(@path)
+      while 1
+        request = @sftp.readdir(handle).wait
+        break if request.response.eof?
+        raise "fail!" unless request.response.ok?
+        request.response.data[:names].each do |file|
+          next if file.name == '.' or file.name == '..'
+          dumps << Dump.new(:name => file.name, :size => file.attributes.size)
+        end
+      end
+      dumps
     end
     
     def delete(file_names)
@@ -240,10 +239,6 @@ module Dabcup::Storage
       end
     end
     
-    def exists?(file_name)
-      list.include?(file_name)
-    end
-    
     def connect
       return if @sftp
       Dabcup::info("SFTP connect to #{@login}@#{@host}")
@@ -254,7 +249,8 @@ module Dabcup::Storage
     def disconnect
       return if not @sftp
       Dabcup::info("SFTP disconnect from #{@login}@#{@host}")
-      @sftp.close 
+      puts @sftp.class
+      @sftp.close(nil)
     end
   end
   

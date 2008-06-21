@@ -7,6 +7,10 @@ module Dabcup::Operation
       @spare_storage = Dabcup::Storage::Factory.new_storage(@config['spare_storage']) if @config.has_key?('spare_storage')
     end
     
+    def run
+      raise NotImplementedError.new("Sorry")
+    end
+    
     def terminate
       @storage.disconnect if @storage
       @spare_storage.disconnect if @spare_storage
@@ -22,7 +26,7 @@ module Dabcup::Operation
       @storage.put(file_path, file_name)
       @spare_storage.put(file_path, file_name) if @spare_storage
       ensure
-        File.delete(file_path) if File.exists?(file_path)
+        File.delete(file_path) if file_path and File.exists?(file_path)
     end
   end
   
@@ -34,11 +38,11 @@ module Dabcup::Operation
       if @storage.exists?(file_name)
         @storage.get(file_name, file_path)
       else
-        if not @spare_storage.nil? and @spare_storage.exists?(file_name)
+        if @spare_storage and @spare_storage.exists?(file_name)
           Dabcup::info("Get '#{args[2]}.dump' from the spare storage")
           @spare_storage.get(file_name, file_path)
         else
-          raise "No '#{args[2]}' dump found"
+          raise Dabcup::Error.new("Dump '#{file_name}' not found.")
         end
       end
       @db.restore(file_path)
@@ -58,7 +62,7 @@ module Dabcup::Operation
       dumps.each do |dump|
         name_str = dump.name.ljust(max_length + 2)
         size_str = (dump.size / 1024).to_s.rjust(8)
-        puts "#{name_str}#{size_str} Ko"
+        puts "#{name_str}#{size_str} KB"
       end
     end
   end
@@ -85,11 +89,12 @@ module Dabcup::Operation
       dow = keep.has_key?('days_of_week') ? extract_numbers(keep['days_of_week'].to_s) : []
       dom = keep.has_key?('days_of_month') ? extract_numbers(keep['days_of_month'].to_s) : []
       ldt = keep.has_key?('less_days_than') ? keep['less_days_than'].to_i : 0
-      raise "Expected a 'days_of_week' or 'days_of_month' or 'less_days_than' section" if dow.nil? and dom.nil? and ldt.nil?
+      raise Dabcup::Error.new("Expected a 'days_of_week' or 'days_of_month' or 'less_days_than' section") if dow.nil? and dom.nil? and ldt.nil?
       black_list = []
-      regex = /(\d\d\d\d)\.(\d\d).(\d\d)\./
-      storage.list.each do |file_name|
-        result = regex.match(file_name)
+      #2008-06-14T01:21:04
+      regex = /(\d\d\d\d)-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)/
+      storage.list.each do |dump|
+        result = regex.match(dump)
         dumped_on = Time.local(result[1], result[2], result[3])
         next if (now - dumped_on) / (3600 * 24) < ldt
         next if dow.include?(dumped_on.wday)
@@ -109,7 +114,7 @@ module Dabcup::Operation
   # Delete a specified dump
   class Delete < Base
     def run(args)
-      @storage.delete(args[2] + '.dump')
+      @storage.delete(args[2])
     end
   end
   
@@ -127,7 +132,7 @@ module Dabcup::Operation
       when 'delete'
         operation = Dabcup::Operation::Delete.new(config)
       else
-        raise "Unknow operation '#{name}'."
+        raise Dabcup::Error.new("Unknow operation '#{name}'.")
       end
       operation
     end
