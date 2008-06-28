@@ -59,7 +59,28 @@ module Dabcup::Storage
   end
 
   class Factory
-    def self.new_storage(storage_config)
+    @@storages_config = nil
+    
+    def self.storages_config=(storages_config)
+      if not storages_config.is_a?(Hash)
+        raise ArgumentError.new("Hash expected, not a '#{storages_config.class}'")
+      end
+      @@storages_config = storages_config
+    end
+    
+    def self.new_storage(hash_or_string)
+      case hash_or_string
+      when Hash
+        new_storage_from_adapter(hash_or_string)
+      when String
+        new_storage_from_name(hash_or_string)
+      else
+        raise ArgumentError.new("Hash or String expected, not '#{hash_or_string.class}'.")
+      end
+    end
+    
+    # Returns a derived Storage instance of the relevant type.
+    def self.new_storage_from_adapter(storage_config)
       adapter = storage_config['adapter']
       case adapter
       when 'S3':
@@ -69,8 +90,14 @@ module Dabcup::Storage
       when 'SFTP':
         @storage = Dabcup::Storage::SFTP.new(storage_config)
       else
-        raise "Unknow #{adapter} storage adapter"
+        raise Dabcup::Error.new("Unknow '#{adapter}' storage adapter.")
       end
+    end
+    
+    def self.new_storage_from_name(name)
+      config = @@storages_config[name]
+      raise Dabcup::Error.new("Unkown '#{name}' storage name.") if not config
+      new_storage_from_adapter(config)
     end
   end
   
@@ -81,13 +108,12 @@ module Dabcup::Storage
       require 'aws/s3'
       @bucket = config['bucket']
     rescue LoadError => ex
-      Dabcup::error("The library aws-s3 is missing. Get it via 'gem install aws-s3'")
+      raise Dabcup::Error.new("The library aws-s3 is missing. Get it via 'gem install aws-s3'")
     end
 
     def put(local_path, remote_path)
       connect
       Dabcup::info("S3 put #{local_path} to #{@bucket}:#{remote_path}")
-      puts AWS::S3::S3Object.path!(@bucket, remote_path)
       File.open(local_path) do |file|
         AWS::S3::S3Object.store(remote_path, file, @bucket)
       end
@@ -107,7 +133,7 @@ module Dabcup::Storage
       connect
       Dabcup::info("S3 list #{@bucket}")
       AWS::S3::Bucket.find(@bucket).objects.collect do |obj|
-        # AWS returns a Time object if string i like: YYYY-MM-DDTHH:mm.
+        # AWS returns a Time object if string is like: YYYY-MM-DDTHH:mm.
         name = obj.key.is_a?(Time) ? Dabcup::time_to_name(obj.key) : obj.key.to_s
         Dump.new(:name => name, :size => obj.size)
       end
@@ -199,7 +225,7 @@ module Dabcup::Storage
       super(config)
       require('net/sftp')
     rescue LoadError => ex
-      Dabcup::error("The library net-ssh is missing. Get it via 'gem install net-ssh'")
+      raise Dabcup::Error.new("The library net-ssh is missing. Get it via 'gem install net-ssh'")
     end
     
     def put(local_path, remote_name)
@@ -253,7 +279,6 @@ module Dabcup::Storage
     def disconnect
       return if not @sftp
       Dabcup::info("SFTP disconnect from #{@login}@#{@host}")
-      puts @sftp.class
       @sftp.close(nil)
     end
   end

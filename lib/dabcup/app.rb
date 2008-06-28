@@ -6,11 +6,12 @@ module Dabcup
       @app_dir = app_dir
       profiles_path = File.join(ENV['HOME'], '.dabcup/profiles.yml')
       @profiles = File.open(profiles_path) do |stream| YAML.load(stream) end
-      @config = @profiles.has_key?('config') ? @profiles['config'] : nil
       initialize_logger
+      initialize_storages
     end
     
     def initialize_logger
+      @config = @profiles.has_key?('config') ? @profiles['config'] : nil
       log_path = @config['log_path'] || '~/.dabcup/dabcup.log'
       log_path = log_path.sub(/^~/, ENV['HOME'])
       log_level = @config['log_level']
@@ -39,6 +40,11 @@ module Dabcup
       logger.level = log_level if log_level
       logger.datetime_format = log_datetime_format if log_datetime_format
       Dabcup::set_logger(logger)
+    end
+    
+    def initialize_storages
+      @storages = @profiles.has_key?('storages') ? @profiles['storages'] : nil
+      Dabcup::Storage::Factory::storages_config = @storages
     end
     
     def main(args)
