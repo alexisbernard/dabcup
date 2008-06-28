@@ -53,6 +53,7 @@ module Dabcup
       $stderr.puts ex.message
     rescue => ex
       $stderr.puts ex.message
+      $stderr.puts 'See log for more informations.'
       Dabcup::fatal(ex)
     end
     

@@ -91,15 +91,11 @@ module Dabcup::Operation
       ldt = keep.has_key?('less_days_than') ? keep['less_days_than'].to_i : 0
       raise Dabcup::Error.new("Expected a 'days_of_week' or 'days_of_month' or 'less_days_than' section") if dow.nil? and dom.nil? and ldt.nil?
       black_list = []
-      #2008-06-14T01:21:04
-      regex = /(\d\d\d\d)-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)/
       storage.list.each do |dump|
-        result = regex.match(dump)
-        dumped_on = Time.local(result[1], result[2], result[3])
-        next if (now - dumped_on) / (3600 * 24) < ldt
-        next if dow.include?(dumped_on.wday)
-        next if dom.include?(dumped_on.mday)
-        black_list << file_name
+        next if (now - dump.created_at) / (3600 * 24) < ldt
+        next if dow.include?(dump.created_at.wday)
+        next if dom.include?(dump.created_at.mday)
+        black_list << dump.name
       end
       storage.delete(black_list)
     end

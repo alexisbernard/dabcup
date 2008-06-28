@@ -33,7 +33,7 @@ module Dabcup::Database
       when 'MySQL'
         @db = Dabcup::Database::MySQL.new(db_config)
       else
-        raise "Unknow #{adapter} database adapter"
+        raise "Unknow '#{adapter}' database adapter"
       end
     end
   end
@@ -44,6 +44,7 @@ module Dabcup::Database
       default_port(5432)
     end
 
+    # TODO sanitize parameters
     def dump(file_path)
       system("pg_dump -Fc -h #{@host} -p #{@port} -U #{@login} -f #{file_path} #{@database}")
     end
