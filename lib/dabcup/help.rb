@@ -14,7 +14,7 @@ Operations:
   restore
   store
 
-Try `dabcup help <operation>` to get details.
+Try 'dabcup help <operation>' to get details.
 Visit http://dabcup.obloh.com for more informations.
 __HELP__
  
@@ -45,8 +45,8 @@ dabcup <profile> list
 __HELP__
 
   @@messages['restore'] = <<__HELP__
-Download the specified dump from the storage, or the spare storage if not available,
-and restore it to the database.
+Download the specified dump from the storage, or the spare storage,
+and restore it to the database. Use 'list' operation to see dumps.
 
 dabcup <profile> restore <dump>
 __HELP__

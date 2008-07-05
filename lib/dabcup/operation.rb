@@ -33,6 +33,7 @@ module Dabcup::Operation
   # Restore a dump file stored on a remote place
   class Restore < Base
     def run(args)
+      raise Dabcup::Error.new("Not enough arguments. Try 'dabcup help restore'") if args.size < 3
       file_name = args[2]
       file_path = File.join(Dir.tmpdir, file_name)
       if @storage.exists?(file_name)

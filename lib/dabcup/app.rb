@@ -4,7 +4,7 @@ module Dabcup
   class App
     def initialize(app_dir)
       @app_dir = app_dir
-      profiles_path = File.join(ENV['HOME'], '.dabcup/profiles.yml')
+      profiles_path = File.expand_path('~/.dabcup/profiles.yml')
       @profiles = File.open(profiles_path) do |stream| YAML.load(stream) end
       initialize_logger
       initialize_storages
@@ -13,7 +13,7 @@ module Dabcup
     def initialize_logger
       @config = @profiles.has_key?('config') ? @profiles['config'] : nil
       log_path = @config['log_path'] || '~/.dabcup/dabcup.log'
-      log_path = log_path.sub(/^~/, ENV['HOME'])
+      log_path = File.expand_path(log_path)
       log_level = @config['log_level']
       log_age = @config['log_age'].to_i
       log_size = @config['log_size'].to_i * 1024 * 1024

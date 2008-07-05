@@ -45,7 +45,7 @@ profile_name: # Unique for each profile, mysite.com or myblog.com for example.
     login: user_name
     name: database_name
   storage:
-    adapter: S3 # S3, SFTP et FTP are supported
+    adapter: S3 # S3, SFTP, FTP and LOCAL are supported
     host:       # S3 don't required host address
     port:       # S3 don't required port. Leave empty for default port.
     login: amazon_key

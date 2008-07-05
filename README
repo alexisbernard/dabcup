@@ -8,6 +8,7 @@ have one tool to manage several types of database with several types of storage.
     - S3 (Amazon Simple Storage Service)
     - FTP
     - SFTP
+    - LOCAL
 
 ### Supported databases ###
     - PostgreSQL

@@ -1,4 +1,5 @@
 require 'net/ftp'
+require 'fileutils'
 
 module Dabcup::Storage
   class Base
@@ -89,6 +90,8 @@ module Dabcup::Storage
         @storage = Dabcup::Storage::FTP.new(storage_config)
       when 'SFTP':
         @storage = Dabcup::Storage::SFTP.new(storage_config)
+      when 'LOCAL'
+        @storage = Dabcup::Storage::LOCAL.new(storage_config)
       else
         raise Dabcup::Error.new("Unknow '#{adapter}' storage adapter.")
       end
@@ -280,6 +283,56 @@ module Dabcup::Storage
       return if not @sftp
       Dabcup::info("SFTP disconnect from #{@login}@#{@host}")
       @sftp.close(nil)
+    end
+  end
+  
+  class LOCAL < Base
+    def initialize(config)
+      super(config)
+      @path = File.expand_path(@path)
+    end
+    
+    def connect
+      FileUtils.mkpath(@path) if not File.exist?(@path) 
+      raise DabcupError.new("The path #{@path} is not a directory.") if not File.directory?(@path)
+    end
+    
+    def disconnect
+    end
+    
+    def put(local_path, remote_name)
+      connect
+      remote_path = File.join(@path, remote_name)
+      Dabcup::info("LOCAL put #{local_path} to #{remote_path}")
+      #File.include(FileUtils)
+      FileUtils.copy(local_path, remote_path)
+    end
+    
+    def get(remote_name, local_path)
+      connect
+      remote_path = File.join(@path, remote_name)
+      Dabcup::info("LOCAL get #{local_path} from #{remote_path}")
+      File.copy(remote_path, local_path)
+    end
+    
+    def list
+      connect
+      dumps = []
+      exclude = ['.', '..']
+      Dabcup::info("LOCAL list #{@path}")
+      Dir.foreach(@path) do |name|
+        next if exclude.include?(name)
+        path = File.join(@path, name)
+        dumps << Dump.new(:name => name, :size => File.size(path))
+      end
+      dumps
+    end
+    
+    def delete(file_name)
+      connect
+      file_path = File.join(@path, file_name)
+      Dabcup::info("LOCAL delete #{file_path}")
+      File.delete(file_path)
     end
   end
   

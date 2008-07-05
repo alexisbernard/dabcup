@@ -50,7 +50,7 @@ module Dabcup::Database
     end
 
     def restore(file_path)
-      system("pg_restore -Fc -c -h #{@host} -p #{@port} -U #{@login} -d #{@database} #{file_path}")
+      system("pg_restore -Fc -c -O -h #{@host} -p #{@port} -U #{@login} -d #{@database} #{file_path}")
     end
   end
   

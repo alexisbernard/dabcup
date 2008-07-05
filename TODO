@@ -2,7 +2,8 @@
 
 ### Version 1.0 ###
 [X] List files name and size
-[ ] Add a help option (dabcup --help <command>)
+[X] Add a help option (dabcup --help <command>)
+[ ] Options for dump and restore
 [ ] Build dabcup website
 [ ] Write a tutorial
 
