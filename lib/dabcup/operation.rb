@@ -72,12 +72,12 @@ module Dabcup::Operation
   class Clean < Base
     def run(args)
       cleaned = false
-      if @config['storage'].has_key?('keep')
-        clean_storage(@storage, @config['storage']['keep'])
+      if @storage.rules
+        clean_storage(@storage)
         cleaned = true
       end
-      if not @spare_storage.nil? and @config['spare_storage'].has_key?('keep')
-        clean_storage(@spare_storage, @config['spare_storage']['keep'])
+      if @spare_storage and @spare_storage.rules
+        clean_storage(@spare_storage)
         cleaned = true
       end
       raise "Expected a 'keep' section either for 'storage' or 'spare_storage'" if not cleaned
@@ -85,11 +85,11 @@ module Dabcup::Operation
     
     private
     
-    def clean_storage(storage, keep)
+    def clean_storage(storage)
       now = Time.new
-      dow = keep.has_key?('days_of_week') ? extract_numbers(keep['days_of_week'].to_s) : []
-      dom = keep.has_key?('days_of_month') ? extract_numbers(keep['days_of_month'].to_s) : []
-      ldt = keep.has_key?('less_days_than') ? keep['less_days_than'].to_i : 0
+      dow = storage.rules.days_of_week
+      dom = storage.rules.days_of_month
+      ldt = storage.rules.less_days_than
       raise Dabcup::Error.new("Expected a 'days_of_week' or 'days_of_month' or 'less_days_than' section") if dow.nil? and dom.nil? and ldt.nil?
       black_list = []
       storage.list.each do |dump|
@@ -100,18 +100,14 @@ module Dabcup::Operation
       end
       storage.delete(black_list)
     end
-    
-    def extract_numbers(str)
-      nums = []
-      str.each(',') do |num| nums << num.strip.to_i end
-      nums
-    end
   end
   
   # Delete a specified dump
   class Delete < Base
     def run(args)
+      raise Dabcup::Error.new("Not enough arguments. Try 'dabcup help delete'") if args.size < 3
       @storage.delete(args[2])
+      @spare_storage.delete(args[2]) if @spare_storage
     end
   end
   

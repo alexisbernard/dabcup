@@ -1,4 +1,7 @@
-DABCUP
+### DABCUP ###
+
+### Version ###
+0.1
 
 ### What is it? ###
 Dabcup is a program to simplify database backups and restoring. The goal is to
@@ -8,24 +11,25 @@ have one tool to manage several types of database with several types of storage.
     - S3 (Amazon Simple Storage Service)
     - FTP
     - SFTP
-    - LOCAL
+    - LOCAL (local file system)
 
 ### Supported databases ###
     - PostgreSQL
     - MySQL
 
 ### Simple to use ###
-./dabcup.rb mysite.com store                # Stores your database
-./dabcup.rb mysite.com restore 2007.12.31   # Restores you database from 31/12/2007
-./dabcup.rb mysite.com clean                # Deletes old backups as specified in ~/.dabcup/.profiles.yml
-./dabcup.rb myblog.com list                 # Lists all backups available
-./dabcup.rb myblog.com delete 2008.03.22    # Deletes the backup of the 22th march 2008
+dabcup.rb mysite.com store                # Stores your database
+dabcup.rb mysite.com restore <name>       # Restores you database from a backup
+dabcup.rb mysite.com clean                # Deletes old backups as specified in ~/.dabcup/.profiles.yml
+dabcup.rb myblog.com list                 # Lists all backups available
+dabcup.rb myblog.com delete <name>        # Deletes a backup
 
 ### Profiles ###
-The list of databases to backup and storage informations are in ~/.dabcup/profiles.yml.
-The sample file is well documented and easily understanding.
+The list of databases to backup and storage informations are defined in
+ ~/.dabcup/profiles.yml. The sample file is well documented and easily understanding.
 
-I want to store output in log files
-./dabcup.rb mysite.com dump >> ~/.dabcup/dabcup.logs 2>> ~/.dabcup/dabcup.logs
-
-
+### Required libraries ###
+If you store your backup via Amazon S3 or SFTP you will need aws-s3 or net-ssh.
+You can install easily these libraries with gem:
+gem install aws-s3
+gem install net-ssh

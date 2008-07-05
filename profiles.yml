@@ -13,8 +13,9 @@
 # Otherwise it may contains your amazon secret key, FTP password, ... In this
 # case be sure that this file is readable only by you. Execute this command:
 # chmod 600 ~/.dabcup/profiles.yml
-# to be sure that this file is only readable by you.
 # FTP, SCP passwords or amazon secret key will never appear in log files.
+# If you really dont want any password in this file you should use SFTP storage.
+# Leave the field password empty and net-ssh will try to use a certificate.
 
 ### PostgreSQL authentification ###
 # If your not the database admin, the only solution is to store your password in

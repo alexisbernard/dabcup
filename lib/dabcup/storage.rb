@@ -8,6 +8,8 @@ module Dabcup::Storage
     attr_accessor :login
     attr_accessor :password
     attr_accessor :path
+    
+    attr_reader :rules
 
     def initialize(config)
       @host = config['host']
@@ -15,6 +17,7 @@ module Dabcup::Storage
       @login = config['login']
       @password = config['password']
       @path = config['path']
+      @rules = Rules.new(config['keep'])
     end
     
     def default_port(port)
@@ -56,6 +59,10 @@ module Dabcup::Storage
     
     def dump_name?(name)
       return false
+    end
+    
+    def exclude?(file_name)
+      ['.', '..'].include?(file_name)
     end
   end
 
@@ -137,9 +144,7 @@ module Dabcup::Storage
       connect
       Dabcup::info("S3 list #{@bucket}")
       AWS::S3::Bucket.find(@bucket).objects.collect do |obj|
-        # AWS returns a Time object if string is like: YYYY-MM-DDTHH:mm.
-        name = obj.key.is_a?(Time) ? Dabcup::time_to_name(obj.key) : obj.key.to_s
-        Dump.new(:name => name, :size => obj.size)
+        Dump.new(:name => obj.key.to_s, :size => obj.size)
       end
     end
     
@@ -156,11 +161,20 @@ module Dabcup::Storage
       return if AWS::S3::Base.connected?
       Dabcup::info("S3 connect to amazon")
       AWS::S3::Base.establish_connection!(:access_key_id => @login, :secret_access_key => @password)
+      create_bucket
     end
     
     def disconnect
       Dabcup::info("S3 disconnect from amazon")
       AWS::S3::Base.disconnect!
+    end
+    
+    def create_bucket
+      AWS::S3::Bucket.list.each do |bucket|
+        return if bucket.name == @bucket
+      end
+      Dabcup::info("S3 create bucket '#{@bucket}'")
+      puts AWS::S3::Bucket::create(@bucket)
     end
   end
   
@@ -192,7 +206,7 @@ module Dabcup::Storage
       lines = @ftp.list(@path)
       lines.collect do |str|
         fields = str.split(' ')
-        next if fields[8] == '.' or fields[8] == '..'
+        next if exclude?(fields[8])
         dumps << Dabcup::Storage::Dump.new(:name => fields[8], :size => fields[4].to_i)
       end
       dumps
@@ -214,12 +228,35 @@ module Dabcup::Storage
       @ftp = Net::FTP.new
       @ftp.connect(@host, @port)
       @ftp.login(@login, @password)
+      mkdirs
     end
     
     def disconnect
       return if not @ftp
       @ftp.close
       Dabcup::info("FTP disconnect from #{@login}@#{@host}")
+    end
+    
+    # TODO put it in Net::FTP
+    def mkdirs
+      dirs = []
+      path = @path
+      first_exception = nil
+      begin
+        @ftp.nlst(path)
+      rescue Net::FTPTempError => ex
+        dirs << path
+        path = File.dirname(path)
+        first_exception = ex unless first_exception
+        if path == '.'
+          raise first_exception
+        else
+          retry
+        end
+      end
+      dirs.reverse.each do |dir|
+        @ftp.mkdir(dir)
+      end
     end
   end
   
@@ -236,14 +273,14 @@ module Dabcup::Storage
       connect
       remote_path = File.join(@path, remote_name)
       Dabcup::info("SFTP put #{local_path} to #{@login}@#{@host}:#{remote_path}")
-      @sftp.put_file(local_path, remote_path)
+      @sftp.upload!(local_path, remote_path)
     end
     
     def get(remote_name, local_path)
       connect
       remote_path = File.join(@path, remote_name)
       Dabcup::info("SFTP get #{local_path} from #{@login}@#{@host}:#{remote_path}")
-      @sftp.get_file(remote_path, local_path)
+      @sftp.download!(remote_path, local_path)
     end
     
     def list
@@ -254,9 +291,9 @@ module Dabcup::Storage
       while 1
         request = @sftp.readdir(handle).wait
         break if request.response.eof?
-        raise "fail!" unless request.response.ok?
+        raise Dabcup::Error.new("Failed to list files from #{@login}@#{@host}:#{@path}") unless request.response.ok?
         request.response.data[:names].each do |file|
-          next if file.name == '.' or file.name == '..'
+          next if exclude?(file.name)
           dumps << Dump.new(:name => file.name, :size => file.attributes.size)
         end
       end
@@ -269,7 +306,7 @@ module Dabcup::Storage
       file_names.each do |file_name|
         file_path = File.join(@path, file_name)
         Dabcup::info("SFTP delete #{@login}@#{@host}:#{file_path}")
-        @sftp.remove(file_path)
+        @sftp.remove!(file_path)
       end
     end
     
@@ -278,12 +315,36 @@ module Dabcup::Storage
       Dabcup::info("SFTP connect to #{@login}@#{@host}")
       @sftp = Net::SFTP.start(@host, @login, :password => @password)
       @sftp.connect
+      mkdirs
     end
     
     def disconnect
       return if not @sftp
       Dabcup::info("SFTP disconnect from #{@login}@#{@host}")
       @sftp.close(nil)
+    end
+    
+    # Create directories if necessary
+    def mkdirs
+      dirs = []
+      path = @path
+      first_exception = nil
+      # TODO find an exists? method
+      begin
+        @sftp.dir.entries(path)
+      rescue Net::SFTP::StatusException => ex
+        dirs << path
+        path = File.dirname(path)
+        first_exception ||= ex
+        if path == '.'
+          raise first_exception
+        else
+          retry
+        end
+      end
+      dirs.reverse.each do |dir|
+        @sftp.mkdir!(dir)
+      end
     end
   end
   
@@ -293,19 +354,10 @@ module Dabcup::Storage
       @path = File.expand_path(@path)
     end
     
-    def connect
-      FileUtils.mkpath(@path) if not File.exist?(@path) 
-      raise DabcupError.new("The path #{@path} is not a directory.") if not File.directory?(@path)
-    end
-    
-    def disconnect
-    end
-    
     def put(local_path, remote_name)
       connect
       remote_path = File.join(@path, remote_name)
       Dabcup::info("LOCAL put #{local_path} to #{remote_path}")
-      #File.include(FileUtils)
       FileUtils.copy(local_path, remote_path)
     end
     
@@ -319,10 +371,9 @@ module Dabcup::Storage
     def list
       connect
       dumps = []
-      exclude = ['.', '..']
       Dabcup::info("LOCAL list #{@path}")
       Dir.foreach(@path) do |name|
-        next if exclude.include?(name)
+        next if exclude?(name)
         path = File.join(@path, name)
         dumps << Dump.new(:name => name, :size => File.size(path))
       end
@@ -335,8 +386,17 @@ module Dabcup::Storage
       Dabcup::info("LOCAL delete #{file_path}")
       File.delete(file_path)
     end
+    
+    def connect
+      FileUtils.mkpath(@path) if not File.exist?(@path) 
+      raise DabcupError.new("The path #{@path} is not a directory.") if not File.directory?(@path)
+    end
+    
+    def disconnect
+    end
   end
   
+  # Dump
   class Dump
     attr_accessor :name
     attr_accessor :size
@@ -370,6 +430,45 @@ module Dabcup::Storage
     def self.valid_name?(name)
       result = @@time_regex.match(name)
       result.size < 1
+    end
+  end
+  
+  # Rules
+  class Rules
+    attr_reader :days_of_week
+    attr_reader :days_of_month
+    attr_reader :less_days_than
+    
+    def initialize(config)
+      @days_of_week = config['days_of_week']
+      @days_of_month = config['days_of_month']
+      @less_days_than = config['less_days_than']
+    end
+    
+    def days_of_week=(string_or_array)
+      @days_of_week = extract_numbers(string_or_array)
+    end
+    
+    def days_of_month=(string_or_array)
+      @days_of_month = extract_numbers(string_or_array)
+    end
+    
+    def less_days_than=(string_or_array)
+      @less_days_than = extract_numbers(string_or_array)
+    end
+    
+    def extract_numbers(string_or_array)
+      case string_or_array
+      when String
+        nums = []
+        str.each(',') do |num| nums << num.strip.to_i end
+        nums
+      when Array
+        string_or_array
+      when NilClass
+      else
+        raise ArgumentError.new("Expected a String or an Array, not a '#{string_or_array.class}'.")
+      end
     end
   end
 end
