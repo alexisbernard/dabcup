@@ -60,9 +60,10 @@ module Dabcup::Storage
   end
 
   class Factory
-    @@storages_config = nil
+    @@storages_config = {}
     
     def self.storages_config=(storages_config)
+      return if not storages_config
       if not storages_config.is_a?(Hash)
         raise ArgumentError.new("Hash expected, not a '#{storages_config.class}'")
       end
