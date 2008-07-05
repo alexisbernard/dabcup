@@ -1,6 +1,8 @@
 #! /usr/bin/ruby
 
-app_dir = File.dirname(File.dirname(File.expand_path(__FILE__)))
+require 'pathname'
+
+app_dir = Pathname.new(__FILE__).realpath().dirname().dirname()
 lib_dir = File.join(app_dir, 'lib')
 $LOAD_PATH << lib_dir
 
