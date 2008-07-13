@@ -9,3 +9,5 @@
 
 ### Version 2.0 ###
 [ ] More databases support
+[ ] Dump via SSH (like gate in capistrano)
+[ ] Synchronyse main storage and spare storage

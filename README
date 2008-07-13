@@ -33,3 +33,6 @@ If you store your backup via Amazon S3 or SFTP you will need aws-s3 or net-ssh.
 You can install easily these libraries with gem:
 gem install aws-s3
 gem install net-ssh
+
+### License ###
+Dabcup is under the Ruby license. See the LICENSE file for more details.
