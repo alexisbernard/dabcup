@@ -4,7 +4,7 @@
 [X] List files name and size
 [X] Add a help option (dabcup --help <command>)
 [ ] Options for dump and restore
-[ ] Build dabcup website
+[X] Build dabcup website
 [ ] Write a tutorial
 
 ### Version 2.0 ###
