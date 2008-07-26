@@ -402,33 +402,21 @@ module Dabcup::Storage
     attr_accessor :size
     attr_reader :dumped_at
     
-    @@time_regex = /(\d\d\d\d)-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)/
+    include Dabcup::MassAssignment
+    
+    TIME_REGEX = /(\d\d\d\d)-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)/
     
     def initialize(attrs = {})
       self.attributes = attrs
     end
     
     def created_at
-      result = @@time_regex.match(name)
+      result = TIME_REGEX.match(name)
       Time.iso8601(result[0])
     end
     
-    def attributes
-      attrs = {}
-      instance_variables.each do |name|
-        attrs[name] = __send__(name)
-      end
-      attrs
-    end
-    
-    def attributes=(attributes)
-      attributes.each do |name, value|
-        __send__(name.to_s + '=', value)
-      end
-    end
-    
     def self.valid_name?(name)
-      result = @@time_regex.match(name)
+      result = TIME_REGEX.match(name)
       result.size < 1
     end
   end
