@@ -80,23 +80,17 @@ module Dabcup::Operation
         clean_storage(@spare_storage)
         cleaned = true
       end
-      raise "Expected a 'keep' section either for 'storage' or 'spare_storage'" if not cleaned
+      raise Dabcup::Error.new("Operation clean expects a 'rules' section either for 'storage' or 'spare_storage'.") if not cleaned
     end
     
     private
     
     def clean_storage(storage)
-      now = Time.new
-      dow = storage.rules.days_of_week
-      dom = storage.rules.days_of_month
-      ldt = storage.rules.less_days_than
-      raise Dabcup::Error.new("Expected a 'days_of_week' or 'days_of_month' or 'less_days_than' section") if dow.nil? and dom.nil? and ldt.nil?
       black_list = []
       storage.list.each do |dump|
-        next if (now - dump.created_at) / (3600 * 24) < ldt
-        next if dow.include?(dump.created_at.wday)
-        next if dom.include?(dump.created_at.mday)
-        black_list << dump.name
+        if storage.rules.apply(dump) == Dabcup::Storage::Rules::REMOVE
+          black_list << dump.name
+        end
       end
       storage.delete(black_list)
     end

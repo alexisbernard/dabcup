@@ -17,7 +17,7 @@ module Dabcup::Storage
       @login = config['login']
       @password = config['password']
       @path = config['path']
-      @rules = Rules.new(config['keep'])
+      @rules = Rules.new(config['rules'])
     end
     
     def default_port(port)
@@ -70,7 +70,6 @@ module Dabcup::Storage
     @@storages_config = {}
     
     def self.storages_config=(storages_config)
-      return if not storages_config
       if not storages_config.is_a?(Hash)
         raise ArgumentError.new("Hash expected, not a '#{storages_config.class}'")
       end
@@ -400,7 +399,7 @@ module Dabcup::Storage
   class Dump
     attr_accessor :name
     attr_accessor :size
-    attr_reader :dumped_at
+    #attr_reader :dumped_at
     
     include Dabcup::MassAssignment
     
@@ -427,36 +426,55 @@ module Dabcup::Storage
     attr_reader :days_of_month
     attr_reader :less_days_than
     
-    def initialize(config)
-      @days_of_week = config['days_of_week']
-      @days_of_month = config['days_of_month']
-      @less_days_than = config['less_days_than']
+    # remove_more_days_than: 365
+    # keep_days_of_month: 1
+    # keep_days_of_week: 1
+    # default: keep
+    
+    # Rules result
+    KEEP = 0
+    REMOVE = 1
+    DEFAULT = 3
+    NOTHING = 4
+    
+    def initialize(rules)
+      @conditions = rules
     end
     
-    def days_of_week=(string_or_array)
-      @days_of_week = extract_numbers(string_or_array)
-    end
-    
-    def days_of_month=(string_or_array)
-      @days_of_month = extract_numbers(string_or_array)
-    end
-    
-    def less_days_than=(string_or_array)
-      @less_days_than = extract_numbers(string_or_array)
-    end
-    
-    def extract_numbers(string_or_array)
-      case string_or_array
-      when String
-        nums = []
-        str.each(',') do |num| nums << num.strip.to_i end
-        nums
+    def apply(dump)
+      @now = Time.now
+      case @conditions
+      when Hash
+        result = apply_conditions(@conditions, dump)
       when Array
-        string_or_array
-      when NilClass
+        @conditions.each do |rules|
+          result = apply_conditions(rules, dump)
+          break if result != NOTHING
+        end
       else
-        raise ArgumentError.new("Expected a String or an Array, not a '#{string_or_array.class}'.")
+        raise ArgumentError.new("Invalid rules")
       end
+      result
+    end
+    
+    def apply_conditions(conditions, dump)
+      conditions.each do |condition, value|
+        case condition
+        when 'remove_more_days_than'
+          return REMOVE if @now - dump.created_at > value * 3600 * 24
+        when 'keep_less_days_than'
+          return REMOVE if @now - dump.created_at < value * 3600 * 24
+        when 'keep_days_of_month'
+          value = [value] if not value.is_a?(Array)
+          return KEEP if value.include?(dump.created_at.mday)
+        when 'keep_days_of_week'
+          value = [value] if not value.is_a?(Array)
+          return KEEP if value.include?(dump.created_at.wday)
+        else
+          raise "Unknow rule instruction '#{condition}'."
+        end
+      end
+      NOTHING
     end
   end
 end
