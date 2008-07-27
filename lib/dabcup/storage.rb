@@ -438,17 +438,17 @@ module Dabcup::Storage
     NOTHING = 4
     
     def initialize(rules)
-      @conditions = rules
+      @instructions = rules
     end
     
     def apply(dump)
       @now = Time.now
-      case @conditions
+      case @instructions
       when Hash
-        result = apply_conditions(@conditions, dump)
+        result = apply_instructions(@instructions, dump)
       when Array
-        @conditions.each do |rules|
-          result = apply_conditions(rules, dump)
+        @instructions.each do |rules|
+          result = apply_instructions(rules, dump)
           break if result != NOTHING
         end
       else
@@ -457,13 +457,13 @@ module Dabcup::Storage
       result
     end
     
-    def apply_conditions(conditions, dump)
-      conditions.each do |condition, value|
-        case condition
+    def apply_conditions(instructions, dump)
+      instructions.each do |instruction, value|
+        case instruction
         when 'remove_more_days_than'
           return REMOVE if @now - dump.created_at > value * 3600 * 24
         when 'keep_less_days_than'
-          return REMOVE if @now - dump.created_at < value * 3600 * 24
+          return KEEP if @now - dump.created_at < value * 3600 * 24
         when 'keep_days_of_month'
           value = [value] if not value.is_a?(Array)
           return KEEP if value.include?(dump.created_at.mday)
@@ -471,7 +471,7 @@ module Dabcup::Storage
           value = [value] if not value.is_a?(Array)
           return KEEP if value.include?(dump.created_at.wday)
         else
-          raise "Unknow rule instruction '#{condition}'."
+          raise "Unknow rule instruction '#{instruction}'."
         end
       end
       NOTHING

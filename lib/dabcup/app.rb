@@ -2,17 +2,21 @@ require 'logger'
 
 module Dabcup
   class App
+    LOG_PATH = '~/.dabcup/dabcup.log'
+    PROFILES_PATH = '~/.dabcup/profiles.yml'
+    CONFIGURATION_PATH = '~/.dabcup/configuration.yml'
+    
     def initialize(app_dir)
       @app_dir = app_dir
-      profiles_path = File.expand_path('~/.dabcup/profiles.yml')
-      @profiles = File.open(profiles_path) do |stream| YAML.load(stream) end
+      @config = load_yaml(CONFIGURATION_PATH)
+      @profiles = load_yaml(PROFILES_PATH)
       initialize_logger
       initialize_storages
     end
     
     def initialize_logger
-      @config = @profiles.has_key?('config') ? @profiles['config'] : nil
-      log_path = @config['log_path'] || '~/.dabcup/dabcup.log'
+      @config = @config.has_key?('config') ? @config['config'] : nil
+      log_path = @config['log_path'] || LOG_PATH
       log_path = File.expand_path(log_path)
       log_level = @config['log_level']
       log_age = @config['log_age'].to_i
@@ -43,8 +47,7 @@ module Dabcup
     end
     
     def initialize_storages
-      @storages = @profiles.has_key?('storages') ? @profiles['storages'] : nil
-      Dabcup::Storage::Factory::storages_config = @storages
+      Dabcup::Storage::Factory::storages_config = @storages = @profiles['storages']
     end
     
     def main(args)
@@ -64,17 +67,24 @@ module Dabcup
     end
     
     def run(args)
-      raise Dabcup::Error.new("Profile '#{args[0]}' doesn't exist.") if not @profiles.has_key?(args[0])
-      operation = Operation::Factory.new_operation(args[1], @profiles[args[0]])
-      Dabcup::info("Begin #{args[1]} #{args[0]}")
+      profile_name, operation_name = args[0 .. 1]
+      raise Dabcup::Error.new("Profile '#{profile_name}' doesn't exist.") if not @profiles[profile_name]
+      operation = Operation::Factory.new_operation(operation_name, @profiles[profile_name])
+      Dabcup::info("Begin #{operation_name} #{profile_name}")
       operation.run(args)
-      Dabcup::info("End #{args[1]} #{args[0]}")
+      Dabcup::info("End #{operation_name} #{profile_name}")
     ensure
       operation.terminate if operation
     end
     
     def help(args)
       puts Dabcup::Help.message(args[1])
+    end
+    
+    private
+    
+    def load_yaml(file_path)
+      File.open(File.expand_path(file_path)) do |stream| YAML.load(stream) end
     end
   end
 end
