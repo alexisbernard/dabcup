@@ -55,6 +55,7 @@ module Dabcup::Operation
     def run(args)
       max_length = 0
       dumps = @storage.list
+      dumps.sort do |left, right| left.created_at <=> right.created_at end
       # Get length of longest name
       dumps.each do |dump|
         max_length = dump.name.size if dump.name.size  > max_length
