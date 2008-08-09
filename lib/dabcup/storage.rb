@@ -17,7 +17,11 @@ module Dabcup::Storage
       @login = config['login']
       @password = config['password']
       @path = config['path']
-      @rules = Rules.new(config['rules'])
+      begin
+        @rules = Rules.new(config['rules']) if config['rules']
+      rescue ArgumentError => ex
+        raise Dabcup::Error.new("Invalid rules for storage #{name}.")
+      end
     end
     
     def default_port(port)
@@ -63,6 +67,10 @@ module Dabcup::Storage
     
     def exclude?(file_name)
       ['.', '..'].include?(file_name)
+    end
+    
+    def name
+      "#{@login}@#{@host}:#{port}:#{@path}"
     end
   end
 
@@ -439,7 +447,7 @@ module Dabcup::Storage
     NOTHING = 4
     
     def initialize(rules)
-      @instructions = rules
+      self.instructions = rules
     end
     
     def apply(dump)
@@ -453,12 +461,12 @@ module Dabcup::Storage
           break if result != NOTHING
         end
       else
-        raise ArgumentError.new("Invalid rules")
+        raise ArgumentError.new("Expecting a Hash or an Array instead of a #{@instructions.class}.")
       end
       result
     end
     
-    def apply_conditions(instructions, dump)
+    def apply_instructions(instructions, dump)
       instructions.each do |instruction, value|
         case instruction
         when 'remove_more_days_than'
@@ -477,5 +485,12 @@ module Dabcup::Storage
       end
       NOTHING
     end
+    
+    def instructions=(instructions)
+			if not [Array, Hash].include?(instructions.class)	
+        raise ArgumentError.new("Expecting a Hash or an Array instead of a #{@instructions.class}.")
+			end
+			@instructions = instructions
+		end
   end
 end

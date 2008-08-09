@@ -72,16 +72,8 @@ module Dabcup::Operation
   # Clean the storage and spare_storage
   class Clean < Base
     def run(args)
-      cleaned = false
-      if @storage.rules
-        clean_storage(@storage)
-        cleaned = true
-      end
-      if @spare_storage and @spare_storage.rules
-        clean_storage(@spare_storage)
-        cleaned = true
-      end
-      raise Dabcup::Error.new("Operation clean expects a 'rules' section either for 'storage' or 'spare_storage'.") if not cleaned
+      clean_storage(@storage) if @storage.rules
+      clean_storage(@spare_storage) if @spare_storage and @spare_storage.rules
     end
     
     private

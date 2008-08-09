@@ -42,6 +42,9 @@ module Dabcup
   
   class Error < StandardError
   end
+  
+  class InvalidRules < Error
+  end
 end
 
 require 'tmpdir'
