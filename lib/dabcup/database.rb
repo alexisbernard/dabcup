@@ -68,4 +68,8 @@ module Dabcup::Database
       system("mysql -h #{@host} -P #{@port} -u #{@login} #{@database} < #{file_path}")
     end
   end
+  
+  def self.dump_name(database, time = Time.now)
+    database.database + '_' + Dabcup::time_to_name(time)
+  end
 end

@@ -98,6 +98,23 @@ module Dabcup::Operation
     end
   end
   
+  class Populate < Base
+    def run(args)
+      now = Time.now
+      days_before = args[2].to_i
+      local_file_name = Dabcup::Database::dump_name(@db)
+      local_file_path = File.join(Dir.tmpdir, local_file_name)
+      @db.dump(local_file_path)
+      for day_before in (0 .. days_before)
+        remote_file_name = Dabcup::Database::dump_name(@db, now - (day_before * 24 * 3600))
+        @storage.put(local_file_path, remote_file_name)
+        @spare_storage.put(local_file_path, remote_file_name) if @spare_storage
+      end
+      ensure
+        File.delete(local_file_path) if local_file_path and File.exists?(local_file_path)
+    end
+  end
+  
   class Factory
     def self.new_operation(name, config)
       case name
@@ -111,6 +128,8 @@ module Dabcup::Operation
         operation = Dabcup::Operation::Clean.new(config)
       when 'delete'
         operation = Dabcup::Operation::Delete.new(config)
+      when 'populate'
+        operation = Dabcup::Operation::Populate.new(config)
       else
         raise Dabcup::Error.new("Unknow operation '#{name}'.")
       end
