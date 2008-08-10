@@ -38,13 +38,11 @@ module Dabcup::Operation
       file_path = File.join(Dir.tmpdir, file_name)
       if @main_storage.exists?(file_name)
         @main_storage.get(file_name, file_path)
+      elsif @spare_storage and @spare_storage.exists?(file_name)
+        Dabcup::info("Get '#{args[2]}.dump' from the spare storage")
+        @spare_storage.get(file_name, file_path)
       else
-        if @spare_storage and @spare_storage.exists?(file_name)
-          Dabcup::info("Get '#{args[2]}.dump' from the spare storage")
-          @spare_storage.get(file_name, file_path)
-        else
-          raise Dabcup::Error.new("Dump '#{file_name}' not found.")
-        end
+        raise Dabcup::Error.new("Dump '#{file_name}' not found.")
       end
       @db.restore(file_path)
     end
@@ -65,6 +63,24 @@ module Dabcup::Operation
         name_str = dump.name.ljust(max_length + 2)
         size_str = (dump.size / 1024).to_s.rjust(8)
         puts "#{name_str}#{size_str} KB"
+      end
+    end
+  end
+  
+  class Get < Base
+    def run(args)
+      raise Dabcup::Error.new("Not enough arguments. Try 'dabcup help get'.") if args.size < 3
+      dump_name = args[2]
+      local_path = args[3] || dump_name
+      local_path = File.join(local_path, dump_name) if File.directory?(local_path)
+      local_path = File.expand_path(local_path)
+      # Try to get dump from main or spare storage
+      if @main_storage.exists?(dump_name)
+        @main_storage.get(dump_name, local_path)
+      elsif @spare_storage.exists?(dump_name)
+        @spare_storage.get(dump_name, local_path)
+      else
+        raise Dabcup::Error.new("Dump '#{dump_name}' not found.")
       end
     end
   end
@@ -153,6 +169,8 @@ module Dabcup::Operation
         operation = Dabcup::Operation::Restore.new(config)
       when 'list'
         operation = Dabcup::Operation::List.new(config)
+      when 'get'
+        operation = Dabcup::Operation::Get.new(config)
       when 'delete'
         operation = Dabcup::Operation::Delete.new(config)
       when 'clear'

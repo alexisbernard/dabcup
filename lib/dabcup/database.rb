@@ -1,3 +1,5 @@
+require 'open3'
+
 module Dabcup::Database
   class Base
     attr_accessor :host
@@ -28,7 +30,10 @@ module Dabcup::Database
     
     def system(command)
       Dabcup::info(command)
-      Kernel::system(command)
+      # TODO Found a nice way to get the exit status.
+      stdin, stdout, stderr = Open3.popen3(command + "; echo $?")
+      Dabcup::info(stdout.read) if not stdout.eof?
+      raise Dabcup::Error.new("Failed to execute '#{command}', stderr is '#{stderr.read}'.") if not stderr.eof?
     end
   end
 

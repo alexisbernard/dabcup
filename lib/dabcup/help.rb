@@ -9,8 +9,11 @@ Usage:
 
 Operations:
   clean
+  clear
   delete
+  get
   list
+  populate
   restore
   store
 
@@ -29,21 +32,44 @@ my-profile:
     days_of_week: 1     # Keeps all dumps of the first day of the week
     less_days_than: 50  # Keep dumps younger than 50 days
 
-$ dabcup <profile> clean
+dabcup <profile> clean
 __HELP__
 
+  @@messages['clear'] = <<__HELP__
+Delete all dumps from the main and the spare storages. Use safely this operation
+because no confirmation is asked.
+
+dabcup <profile> clear
+__HELP__
+  
   @@messages['delete'] = <<__HELP__
 Deletes the specified dump.
 
 dabcup <profile> <dump>
 __HELP__
+  
+  @@messages['get'] = <<__HELP__
+Retrieves the specified dump from the main or the spare storage. The local path
+represents where you want to retrieve the dump. If not specified the dump will
+be downloaded into the current directory.
+
+dabcup <profile> get <dump> [<local_path>]
+__HELP__
 
   @@messages['list'] = <<__HELP__
-Lists dumps.
+Lists dumps of the main storage.
 
 dabcup <profile> list
 __HELP__
 
+  @@messages['populate'] = <<__HELP__
+The purpose of this operation is only to help you to test clean rules. It 
+populates the main and the spare storages with n backups. Each backup get back a
+day before.
+
+dabcup <profile> populate <n>
+__HELP__
+  
   @@messages['restore'] = <<__HELP__
 Download the specified dump from the storage, or the spare storage,
 and restore it to the database. Use 'list' operation to see dumps.

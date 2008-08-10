@@ -38,11 +38,11 @@ module Dabcup::Storage
       raise NotImplementedError.new('Sorry.')
     end
     
-    def put
+    def put(local_path, remote_name)
       raise NotImplementedError.new('Sorry.')
     end
     
-    def get
+    def get(remote_name, local_path)
       raise NotImplementedError.new('Sorry.')
     end
     

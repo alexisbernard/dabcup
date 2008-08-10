@@ -6,6 +6,7 @@
 [ ] Options for dump and restore
 [X] Build dabcup website
 [ ] Write a tutorial
+[ ] Support numeric restore: dabcup profile restore -1 # Last dump
 
 ### Version 2.0 ###
 [ ] More databases support
