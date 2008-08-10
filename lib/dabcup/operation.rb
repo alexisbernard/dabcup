@@ -3,7 +3,7 @@ module Dabcup::Operation
     def initialize(config)
       @config = config
       @db = Dabcup::Database::Factory.new_database(@config['database'])
-      @storage = Dabcup::Storage::Factory.new_storage(@config['storage'])
+      @main_storage = Dabcup::Storage::Factory.new_storage(@config['storage'])
       @spare_storage = Dabcup::Storage::Factory.new_storage(@config['spare_storage']) if @config.has_key?('spare_storage')
     end
     
@@ -12,7 +12,7 @@ module Dabcup::Operation
     end
     
     def terminate
-      @storage.disconnect if @storage
+      @main_storage.disconnect if @main_storage
       @spare_storage.disconnect if @spare_storage
     end
   end
@@ -23,7 +23,7 @@ module Dabcup::Operation
       file_name += Dabcup::time_to_name(Time.now)
       file_path = File.join(Dir.tmpdir, file_name)
       @db.dump(file_path)
-      @storage.put(file_path, file_name)
+      @main_storage.put(file_path, file_name)
       @spare_storage.put(file_path, file_name) if @spare_storage
       ensure
         File.delete(file_path) if file_path and File.exists?(file_path)
@@ -36,8 +36,8 @@ module Dabcup::Operation
       raise Dabcup::Error.new("Not enough arguments. Try 'dabcup help restore'") if args.size < 3
       file_name = args[2]
       file_path = File.join(Dir.tmpdir, file_name)
-      if @storage.exists?(file_name)
-        @storage.get(file_name, file_path)
+      if @main_storage.exists?(file_name)
+        @main_storage.get(file_name, file_path)
       else
         if @spare_storage and @spare_storage.exists?(file_name)
           Dabcup::info("Get '#{args[2]}.dump' from the spare storage")
@@ -54,7 +54,7 @@ module Dabcup::Operation
   class List < Base
     def run(args)
       max_length = 0
-      dumps = @storage.list
+      dumps = @main_storage.list
       dumps.sort! do |left, right| left.created_at <=> right.created_at end
       # Get length of longest name
       dumps.each do |dump|
@@ -72,7 +72,7 @@ module Dabcup::Operation
   # Clean the storage and spare_storage
   class Clean < Base
     def run(args)
-      clean_storage(@storage) if @storage.rules
+      clean_storage(@main_storage) if @main_storage.rules
       clean_storage(@spare_storage) if @spare_storage and @spare_storage.rules
     end
     
@@ -93,7 +93,7 @@ module Dabcup::Operation
   class Delete < Base
     def run(args)
       raise Dabcup::Error.new("Not enough arguments. Try 'dabcup help delete'") if args.size < 3
-      @storage.delete(args[2])
+      @main_storage.delete(args[2])
       @spare_storage.delete(args[2]) if @spare_storage
     end
   end
@@ -107,11 +107,40 @@ module Dabcup::Operation
       @db.dump(local_file_path)
       for day_before in (0 .. days_before)
         remote_file_name = Dabcup::Database::dump_name(@db, now - (day_before * 24 * 3600))
-        @storage.put(local_file_path, remote_file_name)
+        @main_storage.put(local_file_path, remote_file_name)
         @spare_storage.put(local_file_path, remote_file_name) if @spare_storage
       end
       ensure
         File.delete(local_file_path) if local_file_path and File.exists?(local_file_path)
+    end
+  end
+  
+  class Clear < Base
+    def run(args)
+      @main_storage.clear
+      @spare_storage.clear if @spare_storage
+    end
+  end
+  
+  class Test < Base
+    def run(args)
+      test_name = args[2].capitalize
+      attributes = {
+        :database => @db,
+        :main_storage => @main_storage,
+        :spare_storage => @spare_storage }
+      test = Dabcup::Test::Factory.new_test(test_name, attributes)
+      test.run
+      failes = 0
+      test.cases.each do |test_case|
+        puts "#{test_case.name}: #{test_case.result}"
+        next if test_case.result
+        puts "  #{test_case.exception.inspect}"
+        puts "  #{test_case.exception.backtrace.join("\n    ")}"
+        failes += 1
+      end
+      puts ""
+      puts "Cases: #{test.cases.size}, Success: #{test.cases.size - failes}, Failes: #{failes}"
     end
   end
   
@@ -124,12 +153,16 @@ module Dabcup::Operation
         operation = Dabcup::Operation::Restore.new(config)
       when 'list'
         operation = Dabcup::Operation::List.new(config)
-      when 'clean'
-        operation = Dabcup::Operation::Clean.new(config)
       when 'delete'
         operation = Dabcup::Operation::Delete.new(config)
+      when 'clear'
+        operation = Dabcup::Operation::Clear.new(config)
+      when 'clean'
+        operation = Dabcup::Operation::Clean.new(config)
       when 'populate'
         operation = Dabcup::Operation::Populate.new(config)
+      when 'test'
+        operation = Dabcup::Operation::Test.new(config)
       else
         raise Dabcup::Error.new("Unknow operation '#{name}'.")
       end

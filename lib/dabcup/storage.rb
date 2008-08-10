@@ -50,8 +50,17 @@ module Dabcup::Storage
       raise NotImplementedError.new('Sorry.')
     end
     
-    def delete
+    def delete(dump_or_string_or_array)
+      file_names = array_of_dumps_names(dump_or_string_or_array)
+      file_names.each do |file_name| delete_by_name(file_name) end
+    end
+    
+    def delete_by_name(dump_name)
       raise NotImplementedError.new('Sorry.')
+    end
+    
+    def clear
+      delete(list)
     end
     
     def exists?(name)
@@ -71,6 +80,30 @@ module Dabcup::Storage
     
     def name
       "#{@login}@#{@host}:#{port}:#{@path}"
+    end
+    
+    # Returns an array of String representing dumps names.
+    # If the argument is an array it must contains only String or Dump objects.
+    def array_of_dumps_names(dump_or_string_or_array)
+      case dump_or_string_or_array
+      when String
+        [dump_or_string_or_array]
+      when Dump
+        [dump_or_string_or_array.name]
+      when Array
+        dump_or_string_or_array.map do |dump_or_string|
+          case dump_or_string
+          when String
+            dump_or_string
+          when Dump
+            dump_or_string.name
+          else
+            raise ArgumentError.new("Expecting an array of String or Dump instead of #{dump_or_string.class}")
+          end
+        end
+      else
+        raise ArgumentError.new("Expecting a String or Dump or and Array instead of #{dump_or_string_or_array.class}")
+      end
     end
   end
 
@@ -101,13 +134,13 @@ module Dabcup::Storage
       adapter = storage_config['adapter']
       case adapter
       when 'S3':
-        @storage = Dabcup::Storage::S3.new(storage_config)
+        Dabcup::Storage::S3.new(storage_config)
       when 'FTP':
-        @storage = Dabcup::Storage::FTP.new(storage_config)
+        Dabcup::Storage::FTP.new(storage_config)
       when 'SFTP':
-        @storage = Dabcup::Storage::SFTP.new(storage_config)
+        Dabcup::Storage::SFTP.new(storage_config)
       when 'LOCAL'
-        @storage = Dabcup::Storage::LOCAL.new(storage_config)
+        Dabcup::Storage::LOCAL.new(storage_config)
       else
         raise Dabcup::Error.new("Unknow '#{adapter}' storage adapter.")
       end
@@ -156,13 +189,10 @@ module Dabcup::Storage
       end
     end
     
-    def delete(file_names)
+    def delete_by_name(file_name)
       connect
-      file_names = [file_names] if file_names.kind_of?(String)
-      file_names.each do |file_name|
-        Dabcup::info("S3 delete #{@bucket}:#{file_name}")
-        AWS::S3::S3Object.delete(file_name, @bucket)
-      end
+      Dabcup::info("S3 delete #{@bucket}:#{file_name}")
+      AWS::S3::S3Object.delete(file_name, @bucket)
     end
     
     def connect
@@ -220,14 +250,11 @@ module Dabcup::Storage
       dumps
     end
     
-    def delete(file_names)
+    def delete_by_name(file_name)
       connect
-      file_names = [file_names] if file_names.kind_of?(String)
-      file_names.each do |file_name|
-        file_path = File.join(@path, file_name)
-        Dabcup::info("FTP delete #{@login}@#{@host}:#{file_path}")
-        @ftp.delete(file_path)
-      end
+      file_path = File.join(@path, file_name)
+      Dabcup::info("FTP delete #{@login}@#{@host}:#{file_path}")
+      @ftp.delete(file_path)
     end
     
     def connect
@@ -308,14 +335,11 @@ module Dabcup::Storage
       dumps
     end
     
-    def delete(file_names)
+    def delete_by_name(file_name)
       connect
-      file_names = [file_names] if file_names.kind_of?(String)
-      file_names.each do |file_name|
-        file_path = File.join(@path, file_name)
-        Dabcup::info("SFTP delete #{@login}@#{@host}:#{file_path}")
-        @sftp.remove!(file_path)
-      end
+      file_path = File.join(@path, file_name)
+      Dabcup::info("SFTP delete #{@login}@#{@host}:#{file_path}")
+      @sftp.remove!(file_path)
     end
     
     def connect
@@ -373,7 +397,7 @@ module Dabcup::Storage
       connect
       remote_path = File.join(@path, remote_name)
       Dabcup::info("LOCAL get #{local_path} from #{remote_path}")
-      File.copy(remote_path, local_path)
+      FileUtils.copy(remote_path, local_path)
     end
     
     def list
@@ -388,7 +412,7 @@ module Dabcup::Storage
       dumps
     end
     
-    def delete(file_name)
+    def delete_by_name(file_name)
       connect
       file_path = File.join(@path, file_name)
       Dabcup::info("LOCAL delete #{file_path}")
@@ -397,7 +421,7 @@ module Dabcup::Storage
     
     def connect
       FileUtils.mkpath(@path) if not File.exist?(@path) 
-      raise DabcupError.new("The path #{@path} is not a directory.") if not File.directory?(@path)
+      raise DabcupError.new("The path '#{@path}' is not a directory.") if not File.directory?(@path)
     end
     
     def disconnect
@@ -487,10 +511,10 @@ module Dabcup::Storage
     end
     
     def instructions=(instructions)
-			if not [Array, Hash].include?(instructions.class)	
+      if not [Array, Hash].include?(instructions.class)	
         raise ArgumentError.new("Expecting a Hash or an Array instead of a #{@instructions.class}.")
-			end
-			@instructions = instructions
-		end
+      end
+      @instructions = instructions
+    end
   end
 end

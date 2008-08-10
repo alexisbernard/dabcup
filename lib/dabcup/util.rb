@@ -3,7 +3,7 @@ module Dabcup
     def attributes
       attrs = {}
       instance_variables.each do |name|
-        attrs[name] = __send__(name)
+        attrs[name] = __send__(name.gsub(/^@/, ''))
       end
       attrs
     end

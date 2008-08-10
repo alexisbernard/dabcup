@@ -55,5 +55,6 @@ require 'dabcup/database'
 require 'dabcup/storage'
 require 'dabcup/operation'
 require 'dabcup/help'
+require 'dabcup/test'
 
 

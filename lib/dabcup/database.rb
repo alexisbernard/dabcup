@@ -18,6 +18,14 @@ module Dabcup::Database
       @port = port if @port.nil? or @port.empty?
     end
     
+    def dump(file_path)
+      raise NotImplementedError('Sorry.')
+    end
+    
+    def restore(file_path)
+      raise NotImplementedError('Sorry.')
+    end
+    
     def system(command)
       Dabcup::info(command)
       Kernel::system(command)
