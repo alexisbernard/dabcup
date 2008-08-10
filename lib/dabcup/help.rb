@@ -57,7 +57,8 @@ dabcup <profile> get <dump> [<local_path>]
 __HELP__
 
   @@messages['list'] = <<__HELP__
-Lists dumps of the main storage.
+Lists dumps of the both storages. The flags 'M' and 'S' means if the dump is
+in the main and/or the spare storage.
 
 dabcup <profile> list
 __HELP__

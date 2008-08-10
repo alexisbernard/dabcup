@@ -451,6 +451,10 @@ module Dabcup::Storage
       result = TIME_REGEX.match(name)
       result.size < 1
     end
+    
+    def ==(dump)
+      @name == dump.name and @size == dump.size
+    end
   end
   
   # Rules
