@@ -1,3 +1,4 @@
+require 'time'
 require 'net/ftp'
 require 'fileutils'
 
@@ -166,7 +167,7 @@ module Dabcup::Storage
       require 'aws/s3'
       @bucket = config['bucket']
     rescue LoadError => ex
-      raise Dabcup::Error.new("The library aws-s3 is missing. Get it via 'gem install aws-s3'")
+      raise Dabcup::Error.new("The library aws-s3 is missing. Get it via 'gem install aws-s3' and set RUBYOPT=rubygems.")
     end
 
     def put(local_path, remote_path)
@@ -306,7 +307,7 @@ module Dabcup::Storage
       super(config)
       require('net/sftp')
     rescue LoadError => ex
-      raise Dabcup::Error.new("The library net-ssh is missing. Get it via 'gem install net-ssh'")
+      raise Dabcup::Error.new("The library net-ssh is missing. Get it via 'gem install net-sftp' and set RUBYOPT=rubygems.")
     end
     
     def put(local_path, remote_name)

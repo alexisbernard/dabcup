@@ -2,17 +2,23 @@ require 'logger'
 
 module Dabcup
   class App
-    LOG_PATH = '~/.dabcup/dabcup.log'
-    PROFILES_PATH = '~/.dabcup/profiles.yml'
-    CONFIGURATION_PATH = '~/.dabcup/configuration.yml'
+    DABCUP_PATH = '~/.dabcup'
+    LOG_PATH = File.expand_path(File.join(DABCUP_PATH, 'dabcup.log'))
+    PROFILES_PATH = File.expand_path(File.join(DABCUP_PATH, 'profiles.yml'))
+    CONFIGURATION_PATH = File.expand_path(File.join(DABCUP_PATH, 'configuration.yml'))
     
     def initialize(app_dir)
+      initialize_config
       @app_dir = app_dir
       @config = load_yaml(CONFIGURATION_PATH)
       @profiles = load_yaml(PROFILES_PATH)
       initialize_logger
       initialize_storages
     end
+    
+    #def initialize_config
+      #Dir.mkdir(DABCUP_PATH) if not File.directory?(DABCUP_PATH)
+    #end
     
     def initialize_logger
       @config = @config.has_key?('config') ? @config['config'] : nil
