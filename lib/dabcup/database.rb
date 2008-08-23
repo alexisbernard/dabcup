@@ -1,5 +1,4 @@
 require 'open3'
-require 'net/ssh'
 
 module Dabcup::Database
   class Base
