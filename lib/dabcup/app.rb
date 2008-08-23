@@ -8,7 +8,7 @@ module Dabcup
     CONFIGURATION_PATH = File.expand_path(File.join(DABCUP_PATH, 'configuration.yml'))
     
     def initialize(app_dir)
-      initialize_config
+      #initialize_config
       @app_dir = app_dir
       @config = load_yaml(CONFIGURATION_PATH)
       @profiles = load_yaml(PROFILES_PATH)
