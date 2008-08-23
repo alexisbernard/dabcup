@@ -48,6 +48,7 @@ module Dabcup
 end
 
 require 'tmpdir'
+
 require 'dabcup/util'
 require 'dabcup/profile'
 require 'dabcup/app'
@@ -56,5 +57,3 @@ require 'dabcup/storage'
 require 'dabcup/operation'
 require 'dabcup/help'
 require 'dabcup/test'
-
-

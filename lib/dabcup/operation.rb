@@ -2,7 +2,7 @@ module Dabcup::Operation
   class Base
     def initialize(config)
       @config = config
-      @db = Dabcup::Database::Factory.new_database(@config['database'])
+      @database = Dabcup::Database::Factory.new_database(@config['database'])
       @main_storage = Dabcup::Storage::Factory.new_storage(@config['storage'])
       @spare_storage = Dabcup::Storage::Factory.new_storage(@config['spare_storage']) if @config.has_key?('spare_storage')
     end
@@ -19,14 +19,47 @@ module Dabcup::Operation
   
   class Store < Base
     def run(args)
-      file_name = @config['database']['name'] + '_'
+      local_dump_path = nil
+      file_name = @config['database']['name'] + '_' # TODO replace by profile name
       file_name += Dabcup::time_to_name(Time.now)
-      file_path = File.join(Dir.tmpdir, file_name)
-      @db.dump(file_path)
-      @main_storage.put(file_path, file_name)
-      @spare_storage.put(file_path, file_name) if @spare_storage
-      ensure
-        File.delete(file_path) if file_path and File.exists?(file_path)
+      file_path = File.join(best_dumps_path, file_name)
+      @database.dump(file_path)
+      @main_storage.put(file_path, file_name) if not @main_storage.exists?(file_name)
+      if @spare_storage
+        local_dump_path = File.exists?(file_path) ? file_path : File.join(best_local_dumps_path, file_name)
+        @main_storage.get(file_name, local_dump_path) if not File.exists?(file_path)
+        @spare_storage.put(local_dump_path, file_name) if not @spare_storage.exists?(file_name)
+      end
+    ensure
+      File.delete(file_path) if file_path and File.exists?(file_path)
+    end
+    
+    # Try to returns the best directory path to dump the database.
+    def best_dumps_path
+      if @database.via_ssh?
+        return @main_storage.path if same_ssh_as_database?(@main_storage)
+      else
+        return @main_storage.path if @main_storage.is_a?(Dabcup::Storage::Local)
+      end
+      Dir.tmpdir
+    end
+    
+    # Try to returns the best local directory path.
+    def best_local_dumps_path
+      return @spare_storage.path if @spare_storage.is_a?(Dabcup::Storage::Local)
+      Dir.tmpdir
+    end
+    
+    def same_ssh_as_database?(storage)
+      return false if not storage.is_a?(Dabcup::Storage::SFTP)
+      storage.host == @database.ssh_host and storage.login == @database.ssh_login
+    end
+    
+    def check
+      return if not @database.via_ssh?
+      if not same_ssh_as_database?(@main_storage)
+        raise Error.new("When dumping via SSH the main storage must be local to the database.")
+      end
     end
   end
   
@@ -44,7 +77,7 @@ module Dabcup::Operation
       else
         raise Dabcup::Error.new("Dump '#{file_name}' not found.")
       end
-      @db.restore(file_path)
+      @database.restore(file_path)
     end
   end
   
@@ -122,11 +155,11 @@ module Dabcup::Operation
     def run(args)
       now = Time.now
       days_before = args[2].to_i
-      local_file_name = Dabcup::Database::dump_name(@db)
+      local_file_name = Dabcup::Database::dump_name(@database)
       local_file_path = File.join(Dir.tmpdir, local_file_name)
-      @db.dump(local_file_path)
+      @database.dump(local_file_path)
       for day_before in (0 .. days_before)
-        remote_file_name = Dabcup::Database::dump_name(@db, now - (day_before * 24 * 3600))
+        remote_file_name = Dabcup::Database::dump_name(@database, now - (day_before * 24 * 3600))
         @main_storage.put(local_file_path, remote_file_name)
         @spare_storage.put(local_file_path, remote_file_name) if @spare_storage
       end
@@ -146,7 +179,7 @@ module Dabcup::Operation
     def run(args)
       test_name = args[2].capitalize
       attributes = {
-        :database => @db,
+        :database => @database,
         :main_storage => @main_storage,
         :spare_storage => @spare_storage }
       test = Dabcup::Test::Factory.new_test(test_name, attributes)

@@ -22,11 +22,9 @@ module Dabcup::Storage
       rescue ArgumentError => ex
         raise Dabcup::Error.new("Invalid rules for storage #{name}.")
       end
-    end
+    end 
     
-    def default_port(port)
-      @port = port if @port.nil? or @port.empty?
-    end
+    #### Methods to implement ###
     
     # Connects to remote host.
     def connect
@@ -50,13 +48,15 @@ module Dabcup::Storage
       raise NotImplementedError.new('Sorry.')
     end
     
+    def delete_by_name(dump_name)
+      raise NotImplementedError.new('Sorry.')
+    end
+    
+    ### End methods to implement ###
+    
     def delete(dump_or_string_or_array)
       file_names = array_of_dumps_names(dump_or_string_or_array)
       file_names.each do |file_name| delete_by_name(file_name) end
-    end
-    
-    def delete_by_name(dump_name)
-      raise NotImplementedError.new('Sorry.')
     end
     
     def clear
@@ -80,6 +80,10 @@ module Dabcup::Storage
     
     def name
       "#{@login}@#{@host}:#{port}:#{@path}"
+    end
+    
+    def default_port(port)
+      @port = port if @port.nil? or @port.empty?
     end
     
     # Returns an array of String representing dumps names.
@@ -140,7 +144,9 @@ module Dabcup::Storage
       when 'SFTP':
         Dabcup::Storage::SFTP.new(storage_config)
       when 'LOCAL'
-        Dabcup::Storage::LOCAL.new(storage_config)
+        Dabcup::Storage::Local.new(storage_config)
+      #when 'REMOTE'
+      #  Dabcup::Storage::Remote.new(storage_config)
       else
         raise Dabcup::Error.new("Unknow '#{adapter}' storage adapter.")
       end
@@ -173,7 +179,7 @@ module Dabcup::Storage
 
     def get(remote_path, local_path)
       connect
-      Dabcup::info("S3 get #{local_path} from #{@bucket}:#{remote_path}")
+      Dabcup::info("S3 get #{@bucket}:#{remote_path} to #{local_path}")
       File.open(local_path, 'w') do |file|
         AWS::S3::S3Object.stream(remote_path, @bucket) do |stream|
           file.write(stream)
@@ -212,7 +218,6 @@ module Dabcup::Storage
         return if bucket.name == @bucket
       end
       Dabcup::info("S3 create bucket '#{@bucket}'")
-      puts AWS::S3::Bucket::create(@bucket)
     end
   end
   
@@ -233,7 +238,7 @@ module Dabcup::Storage
     def get(remote_name, local_path)
       connect
       remote_path = File.join(@path, remote_name)
-      Dabcup::info("FTP get #{local_path} from #{@login}@#{@host}:#{remote_path}")
+      Dabcup::info("FTP get #{@login}@#{@host}:#{remote_path} to #{local_path}")
       @ftp.getbinaryfile(remote_path, local_path)
     end
     
@@ -314,7 +319,7 @@ module Dabcup::Storage
     def get(remote_name, local_path)
       connect
       remote_path = File.join(@path, remote_name)
-      Dabcup::info("SFTP get #{local_path} from #{@login}@#{@host}:#{remote_path}")
+      Dabcup::info("SFTP get #{@login}@#{@host}:#{remote_path} to #{local_path}")
       @sftp.download!(remote_path, local_path)
     end
     
@@ -380,7 +385,7 @@ module Dabcup::Storage
     end
   end
   
-  class LOCAL < Base
+  class Local < Base
     def initialize(config)
       super(config)
       @path = File.expand_path(@path)
@@ -396,7 +401,7 @@ module Dabcup::Storage
     def get(remote_name, local_path)
       connect
       remote_path = File.join(@path, remote_name)
-      Dabcup::info("LOCAL get #{local_path} from #{remote_path}")
+      Dabcup::info("LOCAL get #{remote_path} to #{local_path}")
       FileUtils.copy(remote_path, local_path)
     end
     
