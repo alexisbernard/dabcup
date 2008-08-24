@@ -2,23 +2,26 @@ require 'logger'
 
 module Dabcup
   class App
-    DABCUP_PATH = '~/.dabcup'
+    DABCUP_PATH = File.expand_path('~/.dabcup')
     LOG_PATH = File.expand_path(File.join(DABCUP_PATH, 'dabcup.log'))
     PROFILES_PATH = File.expand_path(File.join(DABCUP_PATH, 'profiles.yml'))
     CONFIGURATION_PATH = File.expand_path(File.join(DABCUP_PATH, 'configuration.yml'))
     
     def initialize(app_dir)
-      #initialize_config
       @app_dir = app_dir
+      initialize_config
       @config = load_yaml(CONFIGURATION_PATH)
       @profiles = load_yaml(PROFILES_PATH)
       initialize_logger
       initialize_storages
     end
     
-    #def initialize_config
-      #Dir.mkdir(DABCUP_PATH) if not File.directory?(DABCUP_PATH)
-    #end
+    # Create configuration directory and files if they are missing.
+    def initialize_config
+      Dir.mkdir(DABCUP_PATH) if not File.directory?(DABCUP_PATH)
+      FileUtils.cp(File.join(@app_dir, 'profiles.yml'), PROFILES_PATH) if not File.exists?(PROFILES_PATH)
+      FileUtils.cp(File.join(@app_dir, 'configuration.yml'), CONFIGURATION_PATH) if not File.exists?(CONFIGURATION_PATH)
+    end
     
     def initialize_logger
       @config = @config.has_key?('config') ? @config['config'] : nil
@@ -42,7 +45,7 @@ module Dabcup
       when 'fatal':
         log_level = Logger::FATAL
       else
-        $stderr.puts("Invalid log level '#{log_level}, use error level instead")
+        $stderr.puts("Invalid log level '#{log_level}, use error level instead.")
         log_level = Logger::ERROR
       end
       
