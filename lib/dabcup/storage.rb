@@ -469,16 +469,22 @@ module Dabcup::Storage
     attr_reader :days_of_month
     attr_reader :less_days_than
     
-    # remove_more_days_than: 365
-    # keep_days_of_month: 1
-    # keep_days_of_week: 1
-    # default: keep
-    
+    # remove_older_than: <n>[Y|M|D]
+    # keep_younger_than: <n>[Y|M|D]
+    # keep_days_of_month: <n>
+    # keep_days_of_week: <n>
+   
     # Rules result
     KEEP = 0
     REMOVE = 1
     DEFAULT = 3
     NOTHING = 4
+    
+    UNITS = {
+      'Y' => 3600 * 24 * 365,
+      'M' => 3600 * 24 * 30,
+      'D' => 3600 * 24
+    }
     
     def initialize(rules)
       self.instructions = rules
@@ -503,10 +509,11 @@ module Dabcup::Storage
     def apply_instructions(instructions, dump)
       instructions.each do |instruction, value|
         case instruction
-        when 'remove_more_days_than'
-          return REMOVE if @now - dump.created_at > value * 3600 * 24
-        when 'keep_less_days_than'
-          return KEEP if @now - dump.created_at < value * 3600 * 24
+        when 'remove_older_than'
+          return REMOVE if @now - dump.created_at > age_to_seconds(value)
+        # TODO Is this rule really necessary?
+        #when 'keep_younger_than'
+        #  return KEEP if @now - dump.created_at < age_to_seconds(value)
         when 'keep_days_of_month'
           value = [value] if not value.is_a?(Array)
           return KEEP if value.include?(dump.created_at.mday)
@@ -514,10 +521,15 @@ module Dabcup::Storage
           value = [value] if not value.is_a?(Array)
           return KEEP if value.include?(dump.created_at.wday)
         else
-          raise "Unknow rule instruction '#{instruction}'."
+          raise Dabcup::Error.new("Unknow rule instruction '#{instruction}'.")
         end
       end
       NOTHING
+    end
+    
+    def age_to_seconds(age)
+      raise Dabcup::Error.new("Unknow unit '#{age[-1,1]}.") if not UNITS[age[-1,1]]
+      age.to_i * UNITS[age[-1,1]]
     end
     
     def instructions=(instructions)
