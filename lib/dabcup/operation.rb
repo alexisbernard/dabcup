@@ -20,18 +20,19 @@ module Dabcup::Operation
   class Store < Base
     def run(args)
       local_dump_path = nil
-      file_name = @config['database']['name'] + '_' # TODO replace by profile name
-      file_name += Dabcup::time_to_name(Time.now)
-      file_path = File.join(best_dumps_path, file_name)
-      @database.dump(file_path)
-      @main_storage.put(file_path, file_name) if not @main_storage.exists?(file_name)
+      dump_name = @config['database']['name'] + '_' # TODO replace by profile name
+      dump_name += Dabcup::time_to_name(Time.now)
+      dump_path = File.join(best_dumps_path, dump_name)
+      @database.dump(dump_path)
+      @main_storage.put(dump_path, dump_name) if not @main_storage.exists?(dump_name)
       if @spare_storage
-        local_dump_path = File.exists?(file_path) ? file_path : File.join(best_local_dumps_path, file_name)
-        @main_storage.get(file_name, local_dump_path) if not File.exists?(file_path)
-        @spare_storage.put(local_dump_path, file_name) if not @spare_storage.exists?(file_name)
+        local_dump_path = File.exists?(dump_path) ? dump_path : File.join(best_local_dumps_path, dump_name)
+        @main_storage.get(dump_name, local_dump_path) if not File.exists?(local_dump_path)
+        @spare_storage.put(local_dump_path, dump_name) if not @spare_storage.exists?(dump_name)
       end
     ensure
-      File.delete(file_path) if file_path and File.exists?(file_path)
+      local_dump_path ||= dump_path
+      File.delete(local_dump_path) if remove_local_dump? and File.exists?(local_dump_path)
     end
     
     # Try to returns the best directory path to dump the database.
@@ -48,6 +49,10 @@ module Dabcup::Operation
     def best_local_dumps_path
       return @spare_storage.path if @spare_storage.is_a?(Dabcup::Storage::Local)
       Dir.tmpdir
+    end
+    
+    def remove_local_dump?
+      @main_sotrage.is_a?(Dabcup::Storage::Local) or @spare_sotrage.is_a?(Dabcup::Storage::Local)
     end
     
     def same_ssh_as_database?(storage)
