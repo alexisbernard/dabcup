@@ -11,7 +11,7 @@ module Dabcup
       @app_dir = app_dir
       initialize_config
       @config = load_yaml(CONFIGURATION_PATH)
-      @profiles = load_yaml(PROFILES_PATH)
+      @profiles = load_yaml(PROFILES_PATH)['profiles']
       initialize_logger
       initialize_storages
     end
@@ -61,7 +61,7 @@ module Dabcup
     
     def main(args)
       if args.size < 1
-        $stderr.puts "Try 'dabcup help'."
+        puts "Try 'dabcup help'."
       elsif ['help', '-h', '--help', '?'].include?(args[0])
         help(args)
       else

@@ -1,10 +1,12 @@
 module Dabcup::Operation
   class Base
-    def initialize(config)
-      @config = config
-      @database = Dabcup::Database::Factory.new_database(@config['database'])
-      @main_storage = Dabcup::Storage::Factory.new_storage(@config['storage'])
-      @spare_storage = Dabcup::Storage::Factory.new_storage(@config['spare_storage']) if @config.has_key?('spare_storage')
+    attr_reader :profile
+    
+    def initialize(profile)
+      @profile = profile
+      @database = Dabcup::Database::Factory.new_database(@profile['database'])
+      @main_storage = Dabcup::Storage::Factory.new_storage(@profile['storage'])
+      @spare_storage = Dabcup::Storage::Factory.new_storage(@profile['spare_storage']) if @profile.has_key?('spare_storage')
     end
     
     def run
@@ -56,7 +58,7 @@ module Dabcup::Operation
     
     def dump_without_ssh(args)
       local_dump_path = nil
-      dump_name = @config['database']['name'] + '_' # TODO replace by profile name
+      dump_name = @profile['database']['name'] + '_' # TODO replace by profile name
       dump_name += Dabcup::time_to_name(Time.now)
       dump_path = File.join(best_dumps_path, dump_name)
       @database.dump(dump_path)
@@ -73,7 +75,7 @@ module Dabcup::Operation
     
     def dump_with_ssh(args)
       local_dump_path = nil
-      dump_name = @config['database']['name'] + '_' # TODO replace by profile name
+      dump_name = @profile['database']['name'] + '_' # TODO replace by profile name
       dump_name += Dabcup::time_to_name(Time.now)
       dump_path = File.join(best_dumps_path, dump_name)
       raise Dabcup::Error.new("Main storage must be on the same host than the database") if not same_ssh_as_database?(@main_storage)
