@@ -3,12 +3,12 @@
 ### Version 1.0 ###
 [X] List files name and size
 [X] Add a help option (dabcup --help <command>)
-[ ] Options for dump and restore
+[X] Dump and restore via SSH
 [X] Build dabcup website
 [ ] Write a tutorial
 [ ] Support numeric restore: dabcup profile restore -1 # Last dump
 
 ### Version 2.0 ###
 [ ] More databases support
-[ ] Dump via SSH (like gate in capistrano)
+[ ] Options for dump and restore
 [ ] Synchronyse main storage and spare storage
