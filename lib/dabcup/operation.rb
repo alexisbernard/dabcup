@@ -15,25 +15,6 @@ module Dabcup::Operation
       @main_storage.disconnect if @main_storage
       @spare_storage.disconnect if @spare_storage
     end
-  end
-  
-  class Store < Base
-    def run(args)
-      local_dump_path = nil
-      dump_name = @config['database']['name'] + '_' # TODO replace by profile name
-      dump_name += Dabcup::time_to_name(Time.now)
-      dump_path = File.join(best_dumps_path, dump_name)
-      @database.dump(dump_path)
-      @main_storage.put(dump_path, dump_name) if not @main_storage.exists?(dump_name)
-      if @spare_storage
-        local_dump_path = File.exists?(dump_path) ? dump_path : File.join(best_local_dumps_path, dump_name)
-        @main_storage.get(dump_name, local_dump_path) if not File.exists?(local_dump_path)
-        @spare_storage.put(local_dump_path, dump_name) if not @spare_storage.exists?(dump_name)
-      end
-    ensure
-      local_dump_path ||= dump_path
-      File.delete(local_dump_path) if remove_local_dump? and File.exists?(local_dump_path)
-    end
     
     # Try to returns the best directory path to dump the database.
     def best_dumps_path
@@ -68,21 +49,84 @@ module Dabcup::Operation
     end
   end
   
+  class Store < Base
+    def run(args)
+      @database.via_ssh? ? dump_with_ssh(args) : dump_withtout_ssh(args)
+    end
+    
+    def dump_without_ssh(args)
+      local_dump_path = nil
+      dump_name = @config['database']['name'] + '_' # TODO replace by profile name
+      dump_name += Dabcup::time_to_name(Time.now)
+      dump_path = File.join(best_dumps_path, dump_name)
+      @database.dump(dump_path)
+      @main_storage.put(dump_path, dump_name) if not @main_storage.exists?(dump_name)
+      if @spare_storage
+        local_dump_path = File.exists?(dump_path) ? dump_path : File.join(best_local_dumps_path, dump_name)
+        @main_storage.get(dump_name, local_dump_path) if not File.exists?(local_dump_path)
+        @spare_storage.put(local_dump_path, dump_name) if not @spare_storage.exists?(dump_name)
+      end
+    ensure
+      local_dump_path ||= dump_path
+      File.delete(local_dump_path) if remove_local_dump? and File.exists?(local_dump_path)
+    end
+    
+    def dump_with_ssh(args)
+      local_dump_path = nil
+      dump_name = @config['database']['name'] + '_' # TODO replace by profile name
+      dump_name += Dabcup::time_to_name(Time.now)
+      dump_path = File.join(best_dumps_path, dump_name)
+      raise Dabcup::Error.new("Main storage must be on the same host than the database") if not same_ssh_as_database?(@main_storage)
+      @database.dump(dump_path)
+      @main_storage.put(dump_path, dump_name) if not @main_storage.exists?(dump_name)
+      if @spare_storage
+        local_dump_path = File.exists?(dump_path) ? dump_path : File.join(best_local_dumps_path, dump_name)
+        @main_storage.get(dump_name, local_dump_path) if not File.exists?(local_dump_path)
+        @spare_storage.put(local_dump_path, dump_name) if not @spare_storage.exists?(dump_name)
+      end
+    ensure
+      local_dump_path ||= dump_path
+      File.delete(local_dump_path) if remove_local_dump? and File.exists?(local_dump_path)
+    end
+  end
+  
   # Restore a dump file stored on a remote place
   class Restore < Base
     def run(args)
+      @database.via_ssh? ? restore_with_ssh(args) : restore_without_ssh(args)
+    end
+    
+    def restore_withtout_ssh(args)
       raise Dabcup::Error.new("Not enough arguments. Try 'dabcup help restore'") if args.size < 3
-      file_name = args[2]
-      file_path = File.join(Dir.tmpdir, file_name)
-      if @main_storage.exists?(file_name)
-        @main_storage.get(file_name, file_path)
-      elsif @spare_storage and @spare_storage.exists?(file_name)
+      dump_name = args[2]
+      dump_path = File.join(Dir.tmpdir, dump_name)
+      if @main_storage.exists?(dump_name)
+        @main_storage.get(dump_name, dump_path)
+      elsif @spare_storage and @spare_storage.exists?(dump_name)
         Dabcup::info("Get '#{args[2]}.dump' from the spare storage")
-        @spare_storage.get(file_name, file_path)
+        @spare_storage.get(dump_name, dump_path)
       else
-        raise Dabcup::Error.new("Dump '#{file_name}' not found.")
+        raise Dabcup::Error.new("Dump '#{dump_name}' not found.")
       end
-      @database.restore(file_path)
+      @database.restore(dump_path)
+    end
+    
+    def retore_with_ssh(args)
+      raise Dabcup::Error.new("Not enough arguments. Try 'dabcup help restore'") if args.size < 3
+      dump_name = args[2]
+      dump_path = File.join(@main_storage.path, dump_name)
+      local_dump_path = nil
+      if not @main_storage.exists?(dump_name)
+        if @spare_storage.is_a?(Dabcup::Storage::Local)
+          local_dump_path = File.join(@spare_storage.path, dump_name)
+        else
+          @spare_storage.get(dump_name, local_dump_path)
+        end
+        @main_storage.put(dump_path, dump_name) if not @main_storage.exists?(dump_name)
+      end
+      @database.restore(dump_path)
+    ensure
+      #File.delete(local_dump_path) if local_dump_path and File.exists?(local_dump_path)
     end
   end
   
