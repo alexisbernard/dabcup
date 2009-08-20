@@ -44,13 +44,6 @@ module Dabcup::Storage
     def get(remote_name, local_path)
       raise NotImplementedError.new('Sorry.')
     end
-    
-    def list
-      list_dumps.inject([]) do |dumps, dump|
-        dumps << dump if dump.valid?
-        dumps
-      end
-    end
 
     def list_dumps
       raise NotImplementedError.new('Sorry.')
@@ -61,6 +54,14 @@ module Dabcup::Storage
     end
     
     ### End methods to implement ###
+
+    def list
+      connect
+      list_dumps.inject([]) do |dumps, dump|
+        dumps << dump if dump.valid?
+        dumps
+      end
+    end
     
     def delete(dump_or_string_or_array)
       file_names = array_of_dumps_names(dump_or_string_or_array)
@@ -72,10 +73,7 @@ module Dabcup::Storage
     end
     
     def exists?(name)
-      list.each do |dump|
-        return true if dump.name == name
-      end
-      false
+      list.any? { |dump| dump.name == name }
     end
     
     def dump_name?(name)
@@ -196,7 +194,6 @@ module Dabcup::Storage
     end
     
     def list_dumps
-      connect
       Dabcup::info("S3 list #{@bucket}")
       AWS::S3::Bucket.find(@bucket).objects.collect do |obj|
         Dump.new(:name => obj.key.to_s, :size => obj.size)
@@ -251,7 +248,6 @@ module Dabcup::Storage
     end
     
     def list_dumps
-      connect
       dumps = []
       Dabcup::info("FTP list #{@login}@#{@host}:#{@path}")
       lines = @ftp.list(@path)
@@ -332,7 +328,6 @@ module Dabcup::Storage
     end
     
     def list_dumps
-      connect
       dumps = []
       Dabcup::info("SFTP list #{@login}@#{@host}:#{@path}")
       handle = @sftp.opendir!(@path)
@@ -414,7 +409,6 @@ module Dabcup::Storage
     end
     
     def list_dumps
-      connect
       dumps = []
       Dabcup::info("LOCAL list #{@path}")
       Dir.foreach(@path) do |name|
