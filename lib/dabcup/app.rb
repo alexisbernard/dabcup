@@ -11,7 +11,7 @@ module Dabcup
       @app_dir = app_dir
       initialize_config
       @config = load_yaml(CONFIGURATION_PATH)
-      @profiles = load_yaml(PROFILES_PATH)['profiles']
+      @profiles = load_yaml(PROFILES_PATH)
       initialize_logger
       initialize_storages
     end

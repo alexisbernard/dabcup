@@ -53,7 +53,7 @@ module Dabcup::Operation
   
   class Store < Base
     def run(args)
-      @database.via_ssh? ? dump_with_ssh(args) : dump_withtout_ssh(args)
+      @database.via_ssh? ? dump_with_ssh(args) : dump_without_ssh(args)
     end
     
     def dump_without_ssh(args)
@@ -98,7 +98,7 @@ module Dabcup::Operation
       @database.via_ssh? ? restore_with_ssh(args) : restore_without_ssh(args)
     end
     
-    def restore_withtout_ssh(args)
+    def restore_without_ssh(args)
       raise Dabcup::Error.new("Not enough arguments. Try 'dabcup help restore'") if args.size < 3
       dump_name = args[2]
       dump_path = File.join(Dir.tmpdir, dump_name)
