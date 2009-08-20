@@ -46,6 +46,13 @@ module Dabcup::Storage
     end
     
     def list
+      list_dumps.inject([]) do |dumps, dump|
+        dumps << dump if dump.valid?
+        dumps
+      end
+    end
+
+    def list_dumps
       raise NotImplementedError.new('Sorry.')
     end
     
@@ -188,7 +195,7 @@ module Dabcup::Storage
       end
     end
     
-    def list
+    def list_dumps
       connect
       Dabcup::info("S3 list #{@bucket}")
       AWS::S3::Bucket.find(@bucket).objects.collect do |obj|
@@ -243,7 +250,7 @@ module Dabcup::Storage
       @ftp.getbinaryfile(remote_path, local_path)
     end
     
-    def list
+    def list_dumps
       connect
       dumps = []
       Dabcup::info("FTP list #{@login}@#{@host}:#{@path}")
@@ -324,7 +331,7 @@ module Dabcup::Storage
       @sftp.download!(remote_path, local_path)
     end
     
-    def list
+    def list_dumps
       connect
       dumps = []
       Dabcup::info("SFTP list #{@login}@#{@host}:#{@path}")
@@ -406,7 +413,7 @@ module Dabcup::Storage
       FileUtils.copy(remote_path, local_path)
     end
     
-    def list
+    def list_dumps
       connect
       dumps = []
       Dabcup::info("LOCAL list #{@path}")
@@ -442,24 +449,24 @@ module Dabcup::Storage
     
     include Dabcup::MassAssignment
     
-    TIME_REGEX = /(\d\d\d\d)-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)/
+    #TIME_REGEX = /(\d\d\d\d)-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)/
     
     def initialize(attrs = {})
       self.attributes = attrs
     end
     
     def created_at
-      result = TIME_REGEX.match(name)
-      Time.iso8601(result[0])
-    end
-    
-    def self.valid_name?(name)
-      result = TIME_REGEX.match(name)
-      result.size < 1
+      Time.parse(name)
+    rescue ArgumentError
+      nil # Invalid date => ignore file name
     end
     
     def ==(dump)
       @name == dump.name and @size == dump.size
+    end
+
+    def valid?
+      created_at != nil
     end
   end
   
