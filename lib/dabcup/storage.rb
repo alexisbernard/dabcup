@@ -82,6 +82,10 @@ module Dabcup
     def dump_name?(name)
       return false
     end
+
+    def find_by_name(file_name)
+      list.find { |dump| dump.name == file_name }
+    end
     
     def name
       "#{@login}@#{@host}:#{port}:#{@path}"

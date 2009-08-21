@@ -10,7 +10,7 @@ module Dabcup
         # Sort dumps by date
         dumps.sort! do |left, right| left.created_at <=> right.created_at end
         # Get length of the longest name
-        max_length = dumps.max do |left, right| left.name.size <=> right.name.size end.name.size
+        max_length= (dumps.map {|d| d.name}.max {|l, r| l <=> r} || '').size
         # Prints names, sizes and flags
         dumps.each do |dump|
           name_str = dump.name.ljust(max_length + 2)

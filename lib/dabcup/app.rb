@@ -6,7 +6,11 @@ module Dabcup
     LOG_PATH = File.expand_path(File.join(DABCUP_PATH, 'dabcup.log'))
     PROFILES_PATH = File.expand_path(File.join(DABCUP_PATH, 'profiles.yml'))
     CONFIGURATION_PATH = File.expand_path(File.join(DABCUP_PATH, 'configuration.yml'))
-    
+
+    attr_reader :config
+    attr_reader :profiles
+
+
     def initialize(app_dir)
       @app_dir = app_dir
       initialize_config
