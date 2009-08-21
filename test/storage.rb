@@ -2,12 +2,14 @@ require File.join(File.dirname(__FILE__), 'dabcup_test')
 
 class StorageTest < DabcupTest
   def test_local
+    assert(app.profiles['test_local'])
     database = Dabcup::Database::Factory.new_database(app.profiles['test_local']['database'])
     storage = Dabcup::Storage.new(app.profiles['test_local']['storage'])
     test_put_get_delete(database, storage)
   end
 
   def test_sftp
+    assert(app.profiles['test_sftp'])
     database = Dabcup::Database::Factory.new_database(app.profiles['test_sftp']['database'])
     storage = Dabcup::Storage.new(app.profiles['test_sftp']['storage'])
     test_put_get_delete(database, storage)
