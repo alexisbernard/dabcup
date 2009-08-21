@@ -5,8 +5,14 @@ module Dabcup::Operation
     def initialize(profile)
       @profile = profile
       @database = Dabcup::Database::Factory.new_database(@profile['database'])
-      @main_storage = Dabcup::Storage::Factory.new_storage(@profile['storage'])
-      @spare_storage = Dabcup::Storage::Factory.new_storage(@profile['spare_storage']) if @profile.has_key?('spare_storage')
+      #@main_storage = Dabcup::Storage::Factory.new_storage(@profile['storage'])
+      #@spare_storage = Dabcup::Storage::Factory.new_storage(@profile['spare_storage']) if @profile.has_key?('spare_storage')
+
+      @main_storage = Dabcup::Storage::new(@profile['storage'])
+      @spare_storage = Dabcup::Storage.new(@profile['spare_storage']) if @profile.has_key?('spare_storage')
+
+      #@main_storage = Dabcup::Storage::Driver::Factory.new_storage(@profile['storage'])
+      #@spare_storage = Dabcup::Storage::Driver::Factory.new_storage(@profile['spare_storage']) if @profile.has_key?('spare_storage')
     end
     
     def run
@@ -23,19 +29,19 @@ module Dabcup::Operation
       if @database.via_ssh?
         return @main_storage.path if same_ssh_as_database?(@main_storage)
       else
-        return @main_storage.path if @main_storage.is_a?(Dabcup::Storage::Local)
+        return @main_storage.path if @main_storage.local?
       end
       Dir.tmpdir
     end
     
     # Try to returns the best local directory path.
     def best_local_dumps_path
-      return @spare_storage.path if @spare_storage.is_a?(Dabcup::Storage::Local)
+      return @spare_storage.path if @spare_storage.local?
       Dir.tmpdir
     end
     
     def remove_local_dump?
-      @main_sotrage.is_a?(Dabcup::Storage::Local) or @spare_sotrage.is_a?(Dabcup::Storage::Local)
+      not @main_storage.local? and not @spare_storage.local?
     end
     
     def same_ssh_as_database?(storage)

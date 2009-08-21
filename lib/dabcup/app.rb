@@ -56,7 +56,8 @@ module Dabcup
     end
     
     def initialize_storages
-      Dabcup::Storage::Factory::storages_config = @storages = @profiles['storages']
+      #Dabcup::Storage::Driver::Factory
+      #Dabcup::Storage::Driver::Factory::storages_config = @storages = @profiles['storages']
     end
     
     def main(args)
