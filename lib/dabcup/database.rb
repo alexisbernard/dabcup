@@ -80,11 +80,15 @@ module Dabcup::Database
 
     # TODO sanitize parameters
     def dump(file_path)
-      system("pg_dump -Fc -h #{@host} -p #{@port} -U #{@login} -f #{file_path} #{@database}")
+      system("pg_dump -Fc #{host_arg} -U #{@login} -f #{file_path} #{@database}")
     end
 
     def restore(file_path)
-      system("pg_restore -Fc -c -O -h #{@host} -p #{@port} -U #{@login} -d #{@database} #{file_path}")
+      system("pg_restore -Fc -c -O #{host_arg} -U #{@login} -d #{@database} #{file_path}")
+    end
+
+    def host_arg
+      @host ? "-h #{@host} -p #{@port}" : ''
     end
   end
   
