@@ -10,6 +10,7 @@ module Dabcup
       # keep_younger_than: <n>[Y|M|D]
       # keep_days_of_month: <n>
       # keep_days_of_week: <n>
+      # keep_hours: <n>
 
       # Rules result
       KEEP = 0
@@ -57,6 +58,9 @@ module Dabcup
           when 'keep_days_of_week'
             value = [value] if not value.is_a?(Array)
             return KEEP if value.include?(dump.created_at.wday)
+          when 'keep_hours'
+            value = [value] if not value.is_a?(Array)
+            return KEEP if value.include?(dump.created_at.hour)
           else
             raise Dabcup::Error.new("Unknow rule instruction '#{instruction}'.")
           end
