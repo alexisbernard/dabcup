@@ -14,7 +14,7 @@ require 'dabcup/storage/rules'
 
 module Dabcup
   class Storage
-    attr_reader :rules
+    attr_reader :rules, :driver
 
     def initialize(config)
       @driver = Driver::Factory.new_storage(config)

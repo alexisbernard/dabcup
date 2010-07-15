@@ -40,8 +40,8 @@ module Dabcup
       end
 
       def same_ssh_as_database?(storage)
-        return false if not storage.is_a?(Dabcup::Storage::SFTP)
-        storage.host == @database.ssh_host and storage.login == @database.ssh_login
+        return false if not storage.driver.is_a?(Dabcup::Storage::Driver::SFTP)
+        storage.driver.host == @database.ssh_host and storage.driver.login == @database.ssh_login
       end
 
       def check
