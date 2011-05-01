@@ -1,38 +1,16 @@
 ### DABCUP ###
 
-### Version ###
-0.1
-
 ### What is it? ###
-Dabcup is a program to simplify database backups and restoring. The goal is to
-have one tool to manage several types of database with several types of storage.
+Dabcup is a tool in order to handle databases backups easily. You can centralize
+all you backup policies on a single server, and then store dumps to many different
+hosts (SSH, S3, FTP).
 
-### Supported storages ###
-    - S3 (Amazon Simple Storage Service)
-    - FTP
-    - SFTP
-    - LOCAL (local file system)
+### How does it work? ###
+You just need to describe your policies in a simple configuration (see conf/dabcup.yml)
+and then run the command: `dabcup foo dump` to backup your database 'foo'.
 
-### Supported databases ###
-    - PostgreSQL
-    - MySQL
+### How to install it? ###
+You need Ruby plus the following gems: aws-s3 and net-ssh.
 
-### Simple to use ###
-dabcup.rb mysite.com store                # Stores your database
-dabcup.rb mysite.com restore <name>       # Restores you database from a backup
-dabcup.rb mysite.com clean                # Deletes old backups as specified in ~/.dabcup/.profiles.yml
-dabcup.rb myblog.com list                 # Lists all backups available
-dabcup.rb myblog.com delete <name>        # Deletes a backup
-
-### Profiles ###
-The list of databases to backup and storage informations are defined in
- ~/.dabcup/profiles.yml. The sample file is well documented and easily understanding.
-
-### Required libraries ###
-If you store your backup via Amazon S3 or SFTP you will need aws-s3 or net-ssh.
-You can install easily these libraries with gem:
-gem install aws-s3
-gem install net-ssh
-
-### License ###
-Dabcup is under the Ruby license. See the LICENSE file for more details.
+sudo apt-get install ruby rubygems
+sudo gem install aws-s3 net-ssh
