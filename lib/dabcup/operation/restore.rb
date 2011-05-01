@@ -12,7 +12,6 @@ module Dabcup
         if @main_storage.exists?(dump_name)
           @main_storage.get(dump_name, dump_path)
         elsif @spare_storage and @spare_storage.exists?(dump_name)
-          Dabcup::info("Get '#{args[2]}.dump' from the spare storage")
           @spare_storage.get(dump_name, dump_path)
         else
           raise Dabcup::Error.new("Dump '#{dump_name}' not found.")

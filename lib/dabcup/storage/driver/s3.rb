@@ -64,7 +64,6 @@ module Dabcup
           AWS::S3::Bucket.list.each do |bucket|
             return if bucket.name == bucket
           end
-          Dabcup::info("Create bucket s3://#{bucket}")
         end
       end
     end

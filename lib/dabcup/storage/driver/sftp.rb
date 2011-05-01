@@ -34,7 +34,7 @@ module Dabcup
 
         def delete(file_name)
           file_path = File.join(uri.path, file_name)
-          sft.remove!(file_path)
+          sftp.remove!(file_path)
         end
 
         def disconnect

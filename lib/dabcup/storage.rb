@@ -31,17 +31,14 @@ module Dabcup
     end
 
     def put(local_path, remote_name)
-      Dabcup::info("put #{local_path} to #{@driver.uri}")
       @driver.put(local_path, remote_name)
     end
 
     def get(remote_name, local_path)
-      Dabcup::info("get #{@driver.uri} to #{local_path}")
       @driver.get(remote_name, local_path)
     end
 
     def list
-      Dabcup::info("list #{@driver.uri}")
       @driver.list.inject([]) do |dumps, dump|
         dumps << dump if dump.valid?
         dumps
@@ -50,10 +47,7 @@ module Dabcup
     
     def delete(dump_or_string_or_array)
       file_names = array_of_dumps_names(dump_or_string_or_array)
-      file_names.each do |file_name|
-        Dabcup::info("delete #{@driver.uri}")
-        @driver.delete(file_name)
-      end
+      file_names.each { |file_name| @driver.delete(file_name) }
     end
     
     def clear

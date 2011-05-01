@@ -30,10 +30,8 @@ module Dabcup
     
     def system(command, interpolation = {})
       command = command % interpolation
-      Dabcup::info(command)
       # TODO Found a nice way to get the exit status.
       stdin, stdout, stderr = Open3.popen3(command + "; echo $?")
-      Dabcup::info(stdout.read) if not stdout.eof?
       raise Dabcup::Error.new("Failed to execute '#{command}', stderr is '#{stderr.read}'.") if not stderr.eof?
       [stdin, stdout, stderr]
     end
@@ -46,9 +44,7 @@ module Dabcup
   module Tunnel
     def system(command, interpolation = {})
       command = command % interpolation
-      Dabcup::info("SSH #{tunnel} '#{command}'")
       stdout = ssh.exec!(command)
-      Dabcup::info(stdout)
     end
     
     def ssh
