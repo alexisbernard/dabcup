@@ -2,11 +2,11 @@ module Dabcup
   module Operation
     class Store < Base
       def run(args)
-        if @profile.via_ssh? && !same_ssh_as_database?(@main_storage)
-          raise Dabcup::Error.new("Main storage must be on the same host than the database")
-        end
         @profile.dump(dump_path)
-        @main_storage.put(dump_path, dump_name) if not @main_storage.exists?(dump_name)
+        unless @main_storage.exists?(dump_name)
+          retrieve_dump_from_remote_database if retrieve_dump_from_remote_database?
+          @main_storage.put(dump_path, dump_name)
+        end
         if @spare_storage
           @main_storage.get(dump_name, local_dump_path) if not File.exists?(local_dump_path)
           @spare_storage.put(local_dump_path, dump_name) if not @spare_storage.exists?(dump_name)
@@ -26,6 +26,16 @@ module Dabcup
 
       def local_dump_path
         File.exists?(dump_path) ? dump_path : File.join(best_local_dumps_path, dump_name)
+      end
+
+      def retrieve_dump_from_remote_database?
+        @profile.via_ssh? && !same_ssh_as_database?(@main_storage)
+      end
+
+      def retrieve_dump_from_remote_database
+        s = Storage::Driver.build(@profile.tunnel.to_s + '/tmp')
+        s.connect
+        s.get(dump_name, local_dump_path)
       end
     end
   end
