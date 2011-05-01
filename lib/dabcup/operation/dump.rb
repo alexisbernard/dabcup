@@ -1,6 +1,6 @@
 module Dabcup
   module Operation
-    class Store < Base
+    class Dump < Base
       def run(args)
         database.dump(dump_path)
         copy_dump_to_main_storage
