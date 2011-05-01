@@ -49,7 +49,6 @@ end
 
 require 'tmpdir'
 
-require 'dabcup/util'
 require 'dabcup/app'
 require 'dabcup/database'
 require 'dabcup/storage'

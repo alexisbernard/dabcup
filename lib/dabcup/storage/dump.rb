@@ -4,10 +4,9 @@ module Dabcup
       attr_accessor :name
       attr_accessor :size
 
-      include Dabcup::MassAssignment
-
       def initialize(attrs = {})
-        self.attributes = attrs
+        self.name = attrs[:name]
+        self.size = attrs[:size]
       end
 
       def created_at
@@ -17,7 +16,7 @@ module Dabcup
       end
 
       def ==(dump)
-        @name == dump.name and @size == dump.size
+        dump && name == dump.name && size == dump.size
       end
 
       def valid?

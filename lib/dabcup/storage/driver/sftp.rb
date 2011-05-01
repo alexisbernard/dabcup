@@ -44,8 +44,7 @@ module Dabcup
         end
 
         def disconnect
-          return if not sft
-          sft.close(nil)
+          @sftp.close(nil) if @sftp
         end
 
         def local?
