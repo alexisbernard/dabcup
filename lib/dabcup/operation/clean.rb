@@ -9,7 +9,7 @@ module Dabcup
       private
 
       def clean_storage(storage)
-        if (retention = @profile.retention.to_i) < 1
+        if (retention = @database.retention.to_i) < 1
           raise Error.new("Retention must be greater than zero")
         end
         storage.delete(storage.list[0 .. -retention-1])

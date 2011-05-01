@@ -1,12 +1,12 @@
 module Dabcup
   module Operation
     class Base
-      attr_reader :profile
+      attr_reader :database
 
-      def initialize(profile)
-        @profile = profile
-        @main_storage = profile.main_storage
-        @spare_storage = profile.spare_storage
+      def initialize(database)
+        @database = database
+        @main_storage = database.main_storage
+        @spare_storage = database.spare_storage
       end
 
       def run
@@ -20,7 +20,7 @@ module Dabcup
 
       # Try to returns the best directory path to dump the database.
       def best_dumps_path
-        if profile.via_ssh?
+        if database.via_ssh?
           return @main_storage.path if same_ssh_as_database?(@main_storage)
         else
           return @main_storage.path if @main_storage.local?
@@ -40,7 +40,7 @@ module Dabcup
 
       def same_ssh_as_database?(storage)
         return false if not storage.driver.is_a?(Dabcup::Storage::Driver::SFTP)
-        storage.driver.host == @profile.tunnel.host
+        storage.driver.host == @database.tunnel.host
       end
 
       def check

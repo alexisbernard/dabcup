@@ -3,9 +3,7 @@ require 'logger'
 module Dabcup
   class App
     DABCUP_PATH = File.expand_path('~/.dabcup')
-    LOG_PATH = File.expand_path(File.join(DABCUP_PATH, 'dabcup.log'))
-    PROFILES_PATH = File.expand_path(File.join(DABCUP_PATH, 'profiles.yml'))
-    PROFILES_PATHS = ['dabcup.yml', '~/.dabcup/profiles.yml', '/etc/dabcup/profiles.yml'].freeze
+    CONFIG_PATHS = ['dabcup.yml', '~/.dabcup/profiles.yml', '/etc/dabcup/profiles.yml'].freeze
 
     attr_reader :config
     attr_reader :profiles
@@ -32,10 +30,10 @@ module Dabcup
     end
     
     def run(args)
-      profile_name, operation_name = args[0 .. 1]
-      raise Dabcup::Error.new("Profile '#{profile_name}' doesn't exist.") if not profiles[profile_name]
-      profile = Database.new(profile_name, profiles[profile_name])
-      operation = Operation.build(operation_name, profile)
+      database_name, operation_name = args[0 .. 1]
+      raise Dabcup::Error.new("Database '#{database_name}' doesn't exist.") unless config[database_name]
+      database = Database.new(database_name, config[database_name])
+      operation = Operation.build(operation_name, database)
       operation.run(args)
     ensure
       operation.terminate if operation
@@ -51,12 +49,12 @@ module Dabcup
       File.open(File.expand_path(file_path)) do |stream| YAML.load(stream) end
     end
     
-    def profiles_path
-      PROFILES_PATHS.find { |path| File.exists?(path) }
+    def config_path
+      CONFIG_PATHS.find { |path| File.exists?(path) }
     end
     
-    def profiles
-      @profiles ||= YAML.load_file(profiles_path)
+    def config
+      @config ||= YAML.load_file(config_path)
     end
   end
 end

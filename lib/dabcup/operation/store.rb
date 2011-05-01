@@ -2,7 +2,7 @@ module Dabcup
   module Operation
     class Store < Base
       def run(args)
-        @profile.dump(dump_path)
+        @database.dump(dump_path)
         copy_dump_to_main_storage
         copy_dump_to_spare_storage
       ensure
@@ -27,7 +27,7 @@ module Dabcup
       end
 
       def dump_name
-        @dump_name ||= @profile.name + '_' + Dabcup::time_to_name(Time.now)
+        @dump_name ||= @database.name + '_' + Dabcup::time_to_name(Time.now)
       end
 
       def dump_path
@@ -39,11 +39,11 @@ module Dabcup
       end
 
       def retrieve_dump_from_remote_database
-        Storage::Driver.build(@profile.tunnel.to_s + '/tmp').get(dump_name, local_dump_path)
+        Storage::Driver.build(@database.tunnel.to_s + '/tmp').get(dump_name, local_dump_path)
       end
 
       def retrieve_dump_from_remote_database?
-        @profile.via_ssh? && !same_ssh_as_database?(@main_storage)
+        @database.via_ssh? && !same_ssh_as_database?(@main_storage)
       end
     end
   end
