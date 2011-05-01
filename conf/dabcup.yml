@@ -1,0 +1,16 @@
+# Sample config file for dabcup.
+
+foo:
+  dump: pg_dump -U postgres foo -f %{dump_path}
+  restore: pg_restore -U postgres -d foo -f %{dump_path}
+  storage: file:///home/foo/dumps
+  spare_storage: s3://MY_KEY:MY_SECRET@MY_BUCKET.s3.amazonaws.com
+  retention: 10
+
+bar:
+  tunnel: ssh://me@sql.my-site.com
+  dump: mysqldump my_db > %{dump_path}
+  storage: ftp://bar:password@backup.my-site.com/dumps
+  spare_storage: sftp://bar@other-backup.my-site.com:/home/bar/dumps
+  retention: 10
+
