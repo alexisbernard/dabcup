@@ -25,27 +25,5 @@ module Dabcup
         raise Dabcup::Error.new("Unknow operation '#{name}'.")
       end
     end
-
-    class Test < Base
-      def run(args)
-        test_name = args[2].capitalize
-        attributes = {
-          :database => @database,
-          :main_storage => @main_storage,
-          :spare_storage => @spare_storage }
-        test = Dabcup::Test::Factory.new_test(test_name, attributes)
-        test.run
-        failes = 0
-        test.cases.each do |test_case|
-          puts "#{test_case.name}: #{test_case.result}"
-          next if test_case.result
-          puts "  #{test_case.exception.inspect}"
-          puts "  #{test_case.exception.backtrace.join("\n    ")}"
-          failes += 1
-        end
-        puts ""
-        puts "Cases: #{test.cases.size}, Success: #{test.cases.size - failes}, Failes: #{failes}"
-      end
-    end
   end
 end
