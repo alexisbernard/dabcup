@@ -7,8 +7,6 @@ module Dabcup
         spare_dumps = spare_storage ? spare_storage.list : []
         # Intersection of main_dumps and spare_dumps
         dumps = main_dumps + spare_dumps.select do |dump| not main_dumps.include?(dump) end
-        # Sort dumps by date
-        dumps.sort! do |left, right| left.created_at <=> right.created_at end
         # Get length of the longest name
         max_length= (dumps.map {|d| d.name}.max {|l, r| l <=> r} || '').size
         # Prints names, sizes and flags

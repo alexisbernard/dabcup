@@ -39,10 +39,8 @@ module Dabcup
     end
 
     def list
-      @driver.list.inject([]) do |dumps, dump|
-        dumps << dump if dump.valid?
-        dumps
-      end
+      dumps = @driver.list.inject([]) { |array, dump| dump.valid? ? array << dump : array }
+      dumps.sort { |left, right| left.created_at <=> right.created_at }
     end
     
     def delete(dump_or_string_or_array)
