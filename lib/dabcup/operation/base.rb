@@ -35,12 +35,12 @@ module Dabcup
       end
 
       def remove_local_dump?
-        not @main_storage.local? and not @spare_storage.local?
+        !@main_storage.local? && (@spare_storage && !@spare_storage.local?)
       end
 
       def same_ssh_as_database?(storage)
         return false if not storage.driver.is_a?(Dabcup::Storage::Driver::SFTP)
-        storage.driver.host == @database.ssh_host and storage.driver.login == @database.ssh_login
+        storage.driver.host == @profile.tunnel.host
       end
 
       def check
