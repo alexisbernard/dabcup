@@ -15,7 +15,7 @@ module Dabcup
 
         def put(local_path, remote_name)
           remote_path = File.join(@uri.path, remote_name)
-          sft.upload!(local_path, remote_path)
+          sftp.upload!(local_path, remote_path)
         end
 
         def get(remote_name, local_path)
@@ -27,7 +27,7 @@ module Dabcup
           dumps = []
           handle = sftp.opendir!(@uri.path)
           while 1
-            request = sft.readdir(handle).wait
+            request = sftp.readdir(handle).wait
             break if request.response.eof?
             raise Dabcup::Error.new("Failed to list files from #{@login}@#{@host}:#{@uri.path}") unless request.response.ok?
             request.response.data[:names].each do |file|

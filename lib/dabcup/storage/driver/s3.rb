@@ -15,12 +15,14 @@ module Dabcup
         end
 
         def put(local_path, remote_path)
+          connect
           File.open(local_path) do |file|
             AWS::S3::S3Object.store(remote_path, file, bucket)
           end
         end
 
         def get(remote_path, local_path)
+          connect
           File.open(local_path, 'w') do |file|
             AWS::S3::S3Object.stream(remote_path, bucket) do |stream|
               file.write(stream)
@@ -29,12 +31,14 @@ module Dabcup
         end
 
         def list
+          connect
           AWS::S3::Bucket.find(bucket).objects.collect do |obj|
             Dump.new(:name => obj.key.to_s, :size => obj.size)
           end
         end
 
         def delete(file_name)
+          connect
           AWS::S3::S3Object.delete(file_name, bucket)
         end
 

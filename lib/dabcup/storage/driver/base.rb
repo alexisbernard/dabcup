@@ -27,14 +27,14 @@ module Dabcup
           @uri = Addressable::URI.parse(uri)
         end
 
-        #### Methods to implement ###
-
-        # Connects to remote host.
-        def connect
-          raise NotImplementedError
+        def exclude?(name)
+          ['.' '..'].include?(name)
         end
 
-        # Disconnects from remote host.
+        ################################
+        ##### Methods to implement #####
+        ################################
+
         def disconnect
           raise NotImplementedError
         end
@@ -62,12 +62,6 @@ module Dabcup
         def local?
           raise NotImplementedError
         end
-        
-        def exclude?(name)
-          ['.' '..'].include?(name)
-        end
-
-        ### End methods to implement ###
       end
     end
   end

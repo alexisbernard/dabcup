@@ -22,10 +22,6 @@ module Dabcup
     def path
       @driver.path
     end
-    
-    def connect
-      @driver.connect
-    end
 
     def disconnect
       @driver.disconnect
@@ -36,19 +32,16 @@ module Dabcup
     end
 
     def put(local_path, remote_name)
-      connect
       Dabcup::info("put #{local_path} to #{@driver.uri}")
       @driver.put(local_path, remote_name)
     end
 
     def get(remote_name, local_path)
-      connect
       Dabcup::info("get #{@driver.uri} to #{local_path}")
       @driver.get(remote_name, local_path)
     end
 
     def list
-      connect
       Dabcup::info("list #{@driver.uri}")
       @driver.list.inject([]) do |dumps, dump|
         dumps << dump if dump.valid?
@@ -57,7 +50,6 @@ module Dabcup
     end
     
     def delete(dump_or_string_or_array)
-      connect
       file_names = array_of_dumps_names(dump_or_string_or_array)
       file_names.each do |file_name|
         Dabcup::info("delete #{@driver.uri}")
