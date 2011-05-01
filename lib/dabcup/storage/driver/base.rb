@@ -1,24 +1,30 @@
+require 'addressable/uri'
+require 'forwardable'
+
 module Dabcup
   class Storage
     module Driver
-      class Base
-        attr_accessor :host
-        attr_accessor :port
-        attr_accessor :login
-        attr_accessor :password
-        attr_accessor :path
+      def self.build(url)
+        if url.include?('file://')
+          Dabcup::Storage::Driver::Local.new(url)
+        elsif url.include?('ssh://')
+          Dabcup::Storage::Driver::SFTP.new(url)
+        elsif url.include?('ftp://')
+          Dabcup::Storage::Driver::FTP.new(url)
+        elsif url.include?('s3://')
+          Dabcup::Storage::Driver::S3.new(url)
+        else
+          raise "No driver found for '#{url}'"
+        end
+      end
 
-        def initialize(config)
-          @host = config['host']
-          @port = config['port']
-          @login = config['login']
-          @password = config['password']
-          @path = config['path']
-          begin
-            @rules = Rules.new(config['rules']) if config['rules']
-          rescue ArgumentError => ex
-            raise Dabcup::Error.new("Invalid rules for storage #{name}.")
-          end
+      class Base
+        attr_reader :uri
+        extend Forwardable
+        def_delegators :@uri, :host, :port, :user, :password, :path
+        
+        def initialize(uri)
+          @uri = Addressable::URI.parse(uri)
         end
 
         #### Methods to implement ###
@@ -55,6 +61,10 @@ module Dabcup
 
         def local?
           raise NotImplementedError
+        end
+        
+        def exclude?(name)
+          ['.' '..'].include?(name)
         end
 
         ### End methods to implement ###

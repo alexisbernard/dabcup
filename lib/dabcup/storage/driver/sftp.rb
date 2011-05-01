@@ -2,8 +2,8 @@ module Dabcup
   class Storage
     module Driver
       class SFTP < Base
-        def initialize(config)
-          super(config)
+        def initialize(uri)
+          super(uri)
           require('net/sftp')
         rescue LoadError => ex
           raise Dabcup::Error.new("The library net-ssh is missing. Get it via 'gem install net-sftp' and set RUBYOPT=rubygems.")
@@ -14,23 +14,23 @@ module Dabcup
         end
 
         def put(local_path, remote_name)
-          remote_path = File.join(@path, remote_name)
+          remote_path = File.join(@uri.path, remote_name)
           @sftp.upload!(local_path, remote_path)
         end
 
         def get(remote_name, local_path)
-          remote_path = File.join(@path, remote_name)
+          remote_path = File.join(@uri.path, remote_name)
           @sftp.download!(remote_path, local_path)
         end
 
         def list
           connect
           dumps = []
-          handle = @sftp.opendir!(@path)
+          handle = @sftp.opendir!(@uri.path)
           while 1
             request = @sftp.readdir(handle).wait
             break if request.response.eof?
-            raise Dabcup::Error.new("Failed to list files from #{@login}@#{@host}:#{@path}") unless request.response.ok?
+            raise Dabcup::Error.new("Failed to list files from #{@login}@#{@host}:#{@uri.path}") unless request.response.ok?
             request.response.data[:names].each do |file|
               #next if exclude?(file.name)
               dumps << Dump.new(:name => file.name, :size => file.attributes.size)
@@ -41,13 +41,13 @@ module Dabcup
 
         def delete(file_name)
           connect
-          file_path = File.join(@path, file_name)
+          file_path = File.join(@uri.path, file_name)
           @sftp.remove!(file_path)
         end
 
         def connect
           return if @sftp
-          @sftp = Net::SFTP.start(@host, @login, :password => @password)
+          @sftp = Net::SFTP.start(@uri.host, @uri.user, :password => @uri.password)
           @sftp.connect
           mkdirs
         end
@@ -64,7 +64,7 @@ module Dabcup
         # Create directories if necessary
         def mkdirs
           dirs = []
-          path = @path
+          path = @uri.path
           first_exception = nil
           # TODO find an exists? method
           begin
@@ -80,6 +80,7 @@ module Dabcup
             end
           end
           dirs.reverse.each do |dir|
+            puts dir
             @sftp.mkdir!(dir)
           end
         end

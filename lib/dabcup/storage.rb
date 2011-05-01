@@ -7,7 +7,6 @@ require 'dabcup/storage/driver/local'
 require 'dabcup/storage/driver/sftp'
 require 'dabcup/storage/driver/ftp'
 require 'dabcup/storage/driver/s3'
-require 'dabcup/storage/driver/factory'
 
 require 'dabcup/storage/dump'
 require 'dabcup/storage/rules'
@@ -16,13 +15,8 @@ module Dabcup
   class Storage
     attr_reader :rules, :driver
 
-    def initialize(config)
-      @driver = Driver::Factory.new_storage(config)
-      begin
-        @rules = Rules.new(config['rules']) if config['rules']
-      rescue ArgumentError => ex
-        raise Dabcup::Error.new("Invalid rules for storage #{name}.")
-      end
+    def initialize(url)
+      @driver = Driver.build(url)
     end 
 
     def path
@@ -43,19 +37,19 @@ module Dabcup
 
     def put(local_path, remote_name)
       connect
-      Dabcup::info("put #{local_path} to #{@driver.protocol}://#{@driver.login}@#{@driver.host}:#{File.join(@driver.path, remote_name)}")
+      Dabcup::info("put #{local_path} to #{@driver.uri}")
       @driver.put(local_path, remote_name)
     end
 
     def get(remote_name, local_path)
       connect
-      Dabcup::info("get #{@driver.protocol}://#{@driver.login}@#{@driver.host}:#{File.join(@driver.path, remote_name)} to #{local_path}")
+      Dabcup::info("get #{@driver.uri} to #{local_path}")
       @driver.get(remote_name, local_path)
     end
 
     def list
       connect
-      Dabcup::info("list #{@driver.protocol}://#{@driver.login}@#{@driver.host}:#{@driver.path}")
+      Dabcup::info("list #{@driver.uri}")
       @driver.list.inject([]) do |dumps, dump|
         dumps << dump if dump.valid?
         dumps
@@ -66,7 +60,7 @@ module Dabcup
       connect
       file_names = array_of_dumps_names(dump_or_string_or_array)
       file_names.each do |file_name|
-        Dabcup::info("delete ftp://#{@driver.login}@#{@driver.host}:#{File.join(@driver.path, file_name)}")
+        Dabcup::info("delete #{@driver.uri}")
         @driver.delete(file_name)
       end
     end

@@ -6,6 +6,7 @@ module Dabcup
     LOG_PATH = File.expand_path(File.join(DABCUP_PATH, 'dabcup.log'))
     PROFILES_PATH = File.expand_path(File.join(DABCUP_PATH, 'profiles.yml'))
     CONFIGURATION_PATH = File.expand_path(File.join(DABCUP_PATH, 'configuration.yml'))
+    PROFILES_PATHS = ['dabcup.yml', '~/.dabcup/profiles.yml', '/etc/dabcup/profiles.yml'].freeze
 
     attr_reader :config
     attr_reader :profiles
@@ -15,7 +16,6 @@ module Dabcup
       @app_dir = app_dir
       initialize_config
       @config = load_yaml(CONFIGURATION_PATH)
-      @profiles = load_yaml(PROFILES_PATH)
       initialize_logger
       initialize_storages
     end
@@ -38,15 +38,15 @@ module Dabcup
       log_datetime_format = @config['log_datetime_format']
       
       case log_level
-      when 'debug':
+      when 'debug' then
         log_level = Logger::DEBUG
-      when 'info':
+      when 'info' then
         log_level = Logger::INFO
-      when 'warn':
+      when 'warn' then
         log_level = Logger::WARN
-      when 'error':
+      when 'error' then
         log_level = Logger::ERROR
-      when 'fatal':
+      when 'fatal' then
         log_level = Logger::FATAL
       else
         $stderr.puts("Invalid log level '#{log_level}, use error level instead.")
@@ -61,7 +61,7 @@ module Dabcup
     
     def initialize_storages
       #Dabcup::Storage::Driver::Factory
-      #Dabcup::Storage::Driver::Factory::storages_config = @storages = @profiles['storages']
+      #Dabcup::Storage::Driver::Factory::storages_config = @storages = profiles['storages']
     end
     
     def main(args)
@@ -72,18 +72,19 @@ module Dabcup
       else
         run(args)
       end
-    rescue Dabcup::Error => ex
-      $stderr.puts ex.message
-    rescue => ex
-      $stderr.puts ex.message
-      $stderr.puts 'See log for more informations.'
-      Dabcup::fatal(ex)
+    #rescue Dabcup::Error => ex
+    #  $stderr.puts ex.message
+    #rescue => ex
+    #  $stderr.puts ex.message
+    #  $stderr.puts 'See log for more informations.'
+    #  Dabcup::fatal(ex)
     end
     
     def run(args)
       profile_name, operation_name = args[0 .. 1]
-      raise Dabcup::Error.new("Profile '#{profile_name}' doesn't exist.") if not @profiles[profile_name]
-      operation = Operation::Factory.new_operation(operation_name, @profiles[profile_name])
+      raise Dabcup::Error.new("Profile '#{profile_name}' doesn't exist.") if not profiles[profile_name]
+      profile = Profile.new(profile_name, profiles[profile_name])
+      operation = Operation::Factory.new_operation(operation_name, profile)
       Dabcup::info("Begin #{operation_name} #{profile_name}")
       operation.run(args)
       Dabcup::info("End #{operation_name} #{profile_name}")
@@ -99,6 +100,14 @@ module Dabcup
     
     def load_yaml(file_path)
       File.open(File.expand_path(file_path)) do |stream| YAML.load(stream) end
+    end
+    
+    def profiles_path
+      PROFILES_PATHS.find { |path| File.exists?(path) }
+    end
+    
+    def profiles
+      @profiles ||= YAML.load_file(profiles_path)
     end
   end
 end

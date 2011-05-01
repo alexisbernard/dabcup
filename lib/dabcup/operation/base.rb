@@ -5,9 +5,8 @@ module Dabcup
 
       def initialize(profile)
         @profile = profile
-        @database = Dabcup::Database::Factory.new_database(@profile['database'])
-        @main_storage = Dabcup::Storage::new(@profile['storage'])
-        @spare_storage = Dabcup::Storage.new(@profile['spare_storage']) if @profile.has_key?('spare_storage')
+        @main_storage = profile.main_storage
+        @spare_storage = profile.spare_storage
       end
 
       def run
@@ -21,7 +20,7 @@ module Dabcup
 
       # Try to returns the best directory path to dump the database.
       def best_dumps_path
-        if @database.via_ssh?
+        if profile.via_ssh?
           return @main_storage.path if same_ssh_as_database?(@main_storage)
         else
           return @main_storage.path if @main_storage.local?

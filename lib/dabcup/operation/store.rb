@@ -2,15 +2,15 @@ module Dabcup
   module Operation
     class Store < Base
       def run(args)
-        @database.via_ssh? ? dump_with_ssh(args) : dump_without_ssh(args)
+        @profile.via_ssh? ? dump_with_ssh(args) : dump_without_ssh(args)
       end
 
       def dump_without_ssh(args)
         local_dump_path = nil
-        dump_name = @profile['database']['name'] + '_' # TODO replace by profile name
+        dump_name = @profile.name
         dump_name += Dabcup::time_to_name(Time.now)
         dump_path = File.join(best_dumps_path, dump_name)
-        @database.dump(dump_path)
+        @profile.dump(dump_path)
         @main_storage.put(dump_path, dump_name) if not @main_storage.exists?(dump_name)
         if @spare_storage
           local_dump_path = File.exists?(dump_path) ? dump_path : File.join(best_local_dumps_path, dump_name)

@@ -6,9 +6,9 @@ module Dabcup
           'file'
         end
 
-        def initialize(config)
-          super(config)
-          @path = File.expand_path(@path)
+        def initialize(url)
+          super(url)
+          @path = File.expand_path(url.sub('file://', ''))
         end
 
         def put(local_path, remote_name)
