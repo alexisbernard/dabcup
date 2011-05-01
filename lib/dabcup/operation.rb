@@ -1,7 +1,7 @@
 require 'dabcup/operation/base'
 require 'dabcup/operation/clean'
 require 'dabcup/operation/clear'
-require 'dabcup/operation/delete'
+require 'dabcup/operation/remove'
 require 'dabcup/operation/get'
 require 'dabcup/operation/list'
 require 'dabcup/operation/populate'
@@ -16,7 +16,7 @@ module Dabcup
       when 'restore' then Dabcup::Operation::Restore.new(config)
       when 'list' then Dabcup::Operation::List.new(config)
       when 'get' then Dabcup::Operation::Get.new(config)
-      when 'delete' then Dabcup::Operation::Delete.new(config)
+      when 'remove' then Dabcup::Operation::Remove.new(config)
       when 'clear' then Dabcup::Operation::Clear.new(config)
       when 'clean' then Dabcup::Operation::Clean.new(config)
       when 'populate' then Dabcup::Operation::Populate.new(config)
