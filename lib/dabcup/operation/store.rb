@@ -33,9 +33,7 @@ module Dabcup
       end
 
       def retrieve_dump_from_remote_database
-        s = Storage::Driver.build(@profile.tunnel.to_s + '/tmp')
-        s.connect
-        s.get(dump_name, local_dump_path)
+        Storage::Driver.build(@profile.tunnel.to_s + '/tmp').get(dump_name, local_dump_path)
       end
     end
   end
