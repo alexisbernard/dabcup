@@ -7,9 +7,6 @@ module Dabcup
 
       def dump_without_ssh(args)
         local_dump_path = nil
-        dump_name = @profile.name
-        dump_name += Dabcup::time_to_name(Time.now)
-        dump_path = File.join(best_dumps_path, dump_name)
         @profile.dump(dump_path)
         @main_storage.put(dump_path, dump_name) if not @main_storage.exists?(dump_name)
         if @spare_storage
@@ -24,9 +21,6 @@ module Dabcup
 
       def dump_with_ssh(args)
         local_dump_path = nil
-        dump_name = @profile.name + '_'
-        dump_name += Dabcup::time_to_name(Time.now)
-        dump_path = File.join(best_dumps_path, dump_name)
         raise Dabcup::Error.new("Main storage must be on the same host than the database") if not same_ssh_as_database?(@main_storage)
         @profile.dump(dump_path)
         @main_storage.put(dump_path, dump_name) if not @main_storage.exists?(dump_name)
@@ -38,6 +32,14 @@ module Dabcup
       ensure
         local_dump_path ||= dump_path
         File.delete(local_dump_path) if remove_local_dump? and File.exists?(local_dump_path)
+      end
+
+      def dump_name
+        @dump_name ||= @profile.name + '_' + Dabcup::time_to_name(Time.now)
+      end
+
+      def dump_path
+        @dump_path ||= File.join(best_dumps_path, dump_name)
       end
     end
   end
