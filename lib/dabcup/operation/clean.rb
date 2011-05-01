@@ -2,20 +2,17 @@ module Dabcup
   module Operation
     class Clean < Base
       def run(args)
-        clean_storage(@main_storage) if @main_storage.rules
-        clean_storage(@spare_storage) if @spare_storage and @spare_storage.rules
+        clean_storage(@main_storage)
+        clean_storage(@spare_storage) if @spare_storage
       end
 
       private
 
       def clean_storage(storage)
-        black_list = []
-        storage.list.each do |dump|
-          if storage.rules.apply(dump) == Dabcup::Storage::Rules::REMOVE
-            black_list << dump.name
-          end
+        if (retention = @profile.retention.to_i) < 1
+          raise Error.new("Retention must be greater than zero")
         end
-        storage.delete(black_list)
+        storage.delete(storage.list[0 .. -retention-1])
       end
     end
   end

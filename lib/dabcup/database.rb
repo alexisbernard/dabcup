@@ -37,6 +37,10 @@ module Dabcup
       raise Dabcup::Error.new("Failed to execute '#{command}', stderr is '#{stderr.read}'.") if not stderr.eof?
       [stdin, stdout, stderr]
     end
+
+    def retention
+      config['retention']
+    end
   end
 
   module Tunnel

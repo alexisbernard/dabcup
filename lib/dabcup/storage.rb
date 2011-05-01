@@ -9,7 +9,6 @@ require 'dabcup/storage/driver/ftp'
 require 'dabcup/storage/driver/s3'
 
 require 'dabcup/storage/dump'
-require 'dabcup/storage/rules'
 
 module Dabcup
   class Storage
