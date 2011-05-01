@@ -50,7 +50,6 @@ end
 require 'tmpdir'
 
 require 'dabcup/util'
-require 'dabcup/profile'
 require 'dabcup/app'
 require 'dabcup/database'
 require 'dabcup/storage'

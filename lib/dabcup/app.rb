@@ -83,7 +83,7 @@ module Dabcup
     def run(args)
       profile_name, operation_name = args[0 .. 1]
       raise Dabcup::Error.new("Profile '#{profile_name}' doesn't exist.") if not profiles[profile_name]
-      profile = Profile.new(profile_name, profiles[profile_name])
+      profile = Database.new(profile_name, profiles[profile_name])
       operation = Operation::Factory.new_operation(operation_name, profile)
       Dabcup::info("Begin #{operation_name} #{profile_name}")
       operation.run(args)

@@ -1,49 +1,39 @@
 require 'open3'
 
-module Dabcup::Database
-  class Base
-    attr_accessor :host
-    attr_accessor :port
-    attr_accessor :login
-    attr_accessor :password
-    attr_accessor :database
-    
-    attr_accessor :ssh_host
-    attr_accessor :ssh_login
-    attr_accessor :ssh_password
-    
+module Dabcup
+  class Database
+    attr_reader :name
     attr_reader :config
-
-    def initialize(config)
+    attr_reader :database
+    attr_reader :main_storage
+    attr_reader :spare_storage
+    
+    def initialize(name, config)
+      @name = name
       @config = config
-      @host = config['host']
-      @port = config['port']
-      @login = config['login']
-      @password = config['password']
-      @database = config['name']
-      initialize_ssh if @config['ssh']
+      @main_storage = Dabcup::Storage.new(config['storage'])
+      @spare_storage = Dabcup::Storage.new(config['spare_storage']) if config['spare_storage']
     end
-    
+
     def initialize_ssh
-      extend(SSH)
-      @ssh_host = @config['ssh']['host']
-      @ssh_login = @config['ssh']['login']
-      @ssh_password = @config['ssh']['password']
+      if @config['ssh']
+        extend(SSH)
+        @ssh_host = @config['ssh']['host']
+        @ssh_login = @config['ssh']['login']
+        @ssh_password = @config['ssh']['password']
+      end
     end
     
-    def default_port(port)
-      @port = port if @port.nil? or @port.empty?
+    def via_ssh?
+      config['ssh'] != nil
     end
     
-    def dump(file_path)
-      raise NotImplementedError('Sorry.')
+    def dump(dump_path)
+      system(config['database']['dump'], :dump_path => File.expand_path(dump_path))
     end
     
-    def restore(file_path)
-      raise NotImplementedError('Sorry.')
-    end
-    
-    def system(command)
+    def system(command, interpolation = {})
+      command = command % interpolation
       Dabcup::info(command)
       # TODO Found a nice way to get the exit status.
       stdin, stdout, stderr = Open3.popen3(command + "; echo $?")
@@ -52,65 +42,8 @@ module Dabcup::Database
       [stdin, stdout, stderr]
     end
     
-    def via_ssh?
-      # TODO Find the equivalent of Module.include?(Dabcup::Database::SSH)
-      @config['ssh'] != nil
-    end
   end
 
-  class Factory
-    def self.new_database(db_config)
-      adapter = db_config['adapter']
-      case adapter
-      when 'PostgreSQL'
-        db = Dabcup::Database::PostgreSQL.new(db_config)
-      when 'MySQL'
-        db = Dabcup::Database::MySQL.new(db_config)
-      else
-        raise "Unknow '#{adapter}' database adapter"
-      end
-    end
-  end
-
-  class PostgreSQL < Base
-    def initialize(config)
-      super(config)
-      default_port(5432)
-    end
-
-    # TODO sanitize parameters
-    def dump(file_path)
-      system("pg_dump -Fc #{host_arg} -U #{@login} -f #{file_path} #{@database}")
-    end
-
-    def restore(file_path)
-      system("pg_restore -Fc -c -O #{host_arg} -U #{@login} -d #{@database} #{file_path}")
-    end
-
-    def host_arg
-      @host ? "-h #{@host} -p #{@port}" : ''
-    end
-  end
-  
-  class MySQL < Base
-    def initialize(config)
-      super(config)
-      default_port(3306)
-    end
-    
-    def dump(file_path)
-      system("mysqldump -h #{@host} -P #{@port} -u #{@login} -r #{file_path} #{@database}")
-    end
-    
-    def restore(file_path)
-      system("mysql -h #{@host} -P #{@port} -u #{@login} #{@database} < #{file_path}")
-    end
-  end
-  
-  def self.dump_name(database, time = Time.now)
-    database.database + '_' + Dabcup::time_to_name(time)
-  end
-  
   module SSH
     attr_reader :ssh
     
@@ -134,3 +67,4 @@ module Dabcup::Database
     end
   end
 end
+
