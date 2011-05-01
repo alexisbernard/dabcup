@@ -3,8 +3,8 @@ module Dabcup
     class List < Base
       def run(args)
         max_length = 0
-        main_dumps = @main_storage.list
-        spare_dumps = @spare_storage ? @spare_storage.list : []
+        main_dumps = main_storage.list
+        spare_dumps = spare_storage ? spare_storage.list : []
         # Intersection of main_dumps and spare_dumps
         dumps = main_dumps + spare_dumps.select do |dump| not main_dumps.include?(dump) end
         # Sort dumps by date
