@@ -2,23 +2,19 @@ module Dabcup
   class Storage
     module Driver
       class FTP < Base
-        def protocol
-          'ftp'
-        end
-
         def put(local_path, remote_name)
           remote_path = File.join(path, remote_name)
-          @ftp.putbinaryfile(local_path, remote_path)
+          ftp.putbinaryfile(local_path, remote_path)
         end
 
         def get(remote_name, local_path)
           remote_path = File.join(path, remote_name)
-          @ftp.getbinaryfile(remote_path, local_path)
+          ftp.getbinaryfile(remote_path, local_path)
         end
 
         def list
           dumps = []
-          lines = @ftp.list(path)
+          lines = ftp.list(path)
           lines.collect do |str|
             fields = str.split(' ')
             next if exclude?(fields[8])
@@ -29,20 +25,21 @@ module Dabcup
 
         def delete(file_name)
           file_path = File.join(path, file_name)
-          @ftp.delete(file_path)
+          ftp.delete(file_path)
         end
 
-        def connect
-          return if @ftp
-          @ftp = Net::FTP.new
-          @ftp.connect(host, port || 21)
-          @ftp.login(user, password)
-          mkdirs
+        def ftp
+          unless @ftp
+            @ftp = Net::FTP.new
+            @ftp.connect(host, port || 21)
+            @ftp.login(user, password)
+            mkdirs
+          end
+          @ftp
         end
 
         def disconnect
-          return if not @ftp
-          @ftp.close
+          @ftp.close if @ftp
         end
 
         def local?
@@ -54,7 +51,7 @@ module Dabcup
           path = path
           first_exception = nil
           begin
-            @ftp.nlst(path)
+            ftp.nlst(path)
           rescue Net::FTPTempError => ex
             dirs << path
             path = File.dirname(path)
@@ -66,7 +63,7 @@ module Dabcup
             end
           end
           dirs.reverse.each do |dir|
-            @ftp.mkdir(dir)
+            ftp.mkdir(dir)
           end
         end
       end

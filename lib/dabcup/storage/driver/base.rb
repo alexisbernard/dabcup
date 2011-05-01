@@ -13,6 +13,8 @@ module Dabcup
           Dabcup::Storage::Driver::FTP.new(url)
         elsif url.include?('s3://')
           Dabcup::Storage::Driver::S3.new(url)
+        elsif url.include?('ftp://')
+          Dabcup::Storage::Driver::FTP.new(url)
         else
           raise "No driver found for '#{url}'"
         end
