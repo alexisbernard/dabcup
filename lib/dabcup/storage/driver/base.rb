@@ -29,10 +29,6 @@ module Dabcup
           @uri = Addressable::URI.parse(uri)
         end
 
-        def exclude?(name)
-          ['.' '..'].include?(name)
-        end
-
         ################################
         ##### Methods to implement #####
         ################################

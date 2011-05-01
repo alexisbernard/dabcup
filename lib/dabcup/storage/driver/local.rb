@@ -25,9 +25,7 @@ module Dabcup
         def list
           dumps = []
           Dir.foreach(@path) do |name|
-            #next if exclude?(name)
-            path = File.join(@path, name)
-            dumps << Dump.new(:name => name, :size => File.size(path))
+            dumps << Dump.new(:name => name, :size => File.size(File.join(@path, name)))
           end
           dumps
         end

@@ -1,8 +1,14 @@
 module Dabcup
   class Storage
     class Dump
+      IGNORED_NAMES = %w(. ..).freeze
+
       attr_accessor :name
       attr_accessor :size
+
+      def self.valid_name?(name)
+        !IGNORED_NAMES.include?(name)
+      end
 
       def initialize(attrs = {})
         self.name = attrs[:name]
@@ -20,7 +26,7 @@ module Dabcup
       end
 
       def valid?
-        name != '.' and name != '..' and created_at != nil
+        self.class.valid_name?(name) && created_at != nil
       end
     end
   end

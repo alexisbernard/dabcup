@@ -17,7 +17,7 @@ module Dabcup
           lines = ftp.list(path)
           lines.collect do |str|
             fields = str.split(' ')
-            next if exclude?(fields[8])
+            next unless Dump.valid_name?(fields[8])
             dumps << Dabcup::Storage::Dump.new(:name => fields[8], :size => fields[4].to_i)
           end
           dumps
