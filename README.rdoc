@@ -1,15 +1,13 @@
-### DABCUP ###
-
-### What is it? ###
+== What is it?
 Dabcup is a tool in order to handle databases backups easily. You can centralize
 all you backup policies on a single server, and then store dumps to many different
 hosts (SSH, S3, FTP).
 
-### How does it work? ###
+== How does it work?
 You just need to describe your policies in a simple configuration (see conf/dabcup.yml)
 and then run the command: `dabcup foo dump` to backup your database 'foo'.
 
-### How to install it? ###
+== How to install it?
 You need Ruby plus the following gems: aws-s3 and net-ssh.
 
 sudo apt-get install ruby rubygems
