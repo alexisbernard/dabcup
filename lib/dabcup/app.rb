@@ -1,5 +1,3 @@
-require 'logger'
-
 module Dabcup
   class App
     DABCUP_PATH = File.expand_path('~/.dabcup')

@@ -7,7 +7,9 @@ module Dabcup
   end
 end
 
+require 'yaml'
 require 'tmpdir'
+require 'logger'
 
 require 'dabcup/app'
 require 'dabcup/database'

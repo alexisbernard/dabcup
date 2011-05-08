@@ -2,17 +2,14 @@
 
 require 'pathname'
 
-app_dir = Pathname.new(__FILE__).realpath().dirname().dirname()
-lib_dir = File.join(app_dir, 'lib')
-$LOAD_PATH << lib_dir
-
-require 'yaml'
-require 'dabcup'
+app_dir = Pathname.new(__FILE__).realpath.dirname.dirname
+$LOAD_PATH << app_dir.join('lib')
 
 begin
   require 'rubygems'
-rescue LoadError => ex
+rescue LoadError
 end
 
-app = Dabcup::App.new(app_dir)
-app.main(ARGV)
+require 'dabcup'
+
+Dabcup::App.new(app_dir).main(ARGV)
