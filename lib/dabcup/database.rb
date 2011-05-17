@@ -25,11 +25,13 @@ module Dabcup
     end
     
     def dump(dump_path)
-      system(config['dump'], :dump_path => File.expand_path(dump_path))
+      system(config['dump'],
+        :dump_name => File.basename(dump_path),
+        :dump_path => File.expand_path(dump_path))
     end
     
     def system(command, interpolation = {})
-      command = command % interpolation
+      command = command % default_interpolation.merge(interpolation)
       # TODO Found a nice way to get the exit status.
       stdin, stdout, stderr = Open3.popen3(command + "; echo $?")
       raise Dabcup::Error.new("Failed to execute '#{command}', stderr is '#{stderr.read}'.") if not stderr.eof?
@@ -39,12 +41,16 @@ module Dabcup
     def retention
       config['retention']
     end
+
+    def default_interpolation
+      {:name => name}
+    end
   end
 
   module Tunnel
     def system(command, interpolation = {})
       command = command % interpolation
-      stdout = ssh.exec!(command)
+      ssh.exec!(command)
     end
     
     def ssh
