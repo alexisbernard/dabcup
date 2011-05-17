@@ -30,8 +30,7 @@ module Dabcup
 
       # Try to returns the best local directory path.
       def best_local_dumps_path
-        return spare_storage.path if spare_storage.local?
-        Dir.tmpdir
+        spare_storage && spare_storage.local? ? spare_storage.path : Dir.tmpdir
       end
 
       def remove_local_dump?
